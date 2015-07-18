@@ -1,0 +1,491 @@
+
+ <!DOCTYPE HTML>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  
+    <title>webkit2png 简单使用 | wawlian说</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no">
+    
+    <meta name="author" content="wawlian">
+    
+
+    
+    <meta name="description" content="最近需要做一个网页截图服务。经过一些调研之后，我们选定一了一个基于python的工具 webkit2png。这个工具本身可以抓取一个网页，然后使用webkit引擎对其进行渲染，并最终将渲染结果保存为png格式的图片。从官方给出的资料来看，webkit2png在Ubuntu上的安装还是比较简单的，在CentOS这一系列OS上的安装可能比较费劲。
+webkit2png本身的参数和选项并不多，使用也比较">
+<meta property="og:type" content="article">
+<meta property="og:title" content="webkit2png 简单使用">
+<meta property="og:url" content="http://codingblogs.net/2014/09/19/webkit2png-简单使用/index.html">
+<meta property="og:site_name" content="wawlian说">
+<meta property="og:description" content="最近需要做一个网页截图服务。经过一些调研之后，我们选定一了一个基于python的工具 webkit2png。这个工具本身可以抓取一个网页，然后使用webkit引擎对其进行渲染，并最终将渲染结果保存为png格式的图片。从官方给出的资料来看，webkit2png在Ubuntu上的安装还是比较简单的，在CentOS这一系列OS上的安装可能比较费劲。
+webkit2png本身的参数和选项并不多，使用也比较">
+<meta property="og:updated_time" content="2015-07-18T13:59:54.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="webkit2png 简单使用">
+<meta name="twitter:description" content="最近需要做一个网页截图服务。经过一些调研之后，我们选定一了一个基于python的工具 webkit2png。这个工具本身可以抓取一个网页，然后使用webkit引擎对其进行渲染，并最终将渲染结果保存为png格式的图片。从官方给出的资料来看，webkit2png在Ubuntu上的安装还是比较简单的，在CentOS这一系列OS上的安装可能比较费劲。
+webkit2png本身的参数和选项并不多，使用也比较">
+<meta name="twitter:creator" content="@wawlian">
+<link rel="publisher" href="104724126254137490000">
+
+    
+    <link rel="alternative" href="/atom.xml" title="wawlian说" type="application/atom+xml">
+    
+    
+    <link rel="icon" href="/img/favicon.ico">
+    
+    
+    <link rel="apple-touch-icon" href="/img/jacman.jpg">
+    <link rel="apple-touch-icon-precomposed" href="/img/jacman.jpg">
+    
+    <link rel="stylesheet" href="/css/style.css" type="text/css">
+</head>
+
+  <body>
+    <header>
+      
+<div>
+		
+			<div id="textlogo">
+				<h1 class="site-name"><a href="/" title="wawlian说">wawlian说</a></h1>
+				<h2 class="blog-motto"></h2>
+			</div>
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="菜单">
+			</a></div>
+			<nav class="animated">
+				<ul>
+					<ul>
+					 
+						<li><a href="/">首页</a></li>
+					
+						<li><a href="/archives">归档</a></li>
+					
+					<li>
+ 					
+					<form class="search" action="//google.com/search" method="get" accept-charset="utf-8">
+						<label>Search</label>
+						<input type="search" id="search" name="q" autocomplete="off" maxlength="20" placeholder="搜索" />
+						<input type="hidden" name="q" value="site:codingblogs.net">
+					</form>
+					
+					</li>
+				</ul>
+			</nav>			
+</div>
+    </header>
+    <div id="container">
+      <div id="main" class="post" itemscope itemprop="blogPost">
+  
+	<article itemprop="articleBody"> 
+		<header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2014/09/19/webkit2png-简单使用/" title="webkit2png 简单使用" itemprop="url">webkit2png 简单使用</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="https://plus.google.com/104724126254137490000?rel=author" title="wawlian" target="_blank" itemprop="author">wawlian</a>
+		
+  <p class="article-time">
+    <time datetime="2014-09-19T11:29:39.000Z" itemprop="datePublished"> 发表于 2014-09-19</time>
+    
+  </p>
+</header>
+	<div class="article-content">
+		
+		<p>最近需要做一个网页截图服务。经过一些调研之后，我们选定一了一个基于python的工具 <a href="https://github.com/AdamN/python-webkit2png/" target="_blank" rel="external">webkit2png</a>。这个工具本身可以抓取一个网页，然后使用webkit引擎对其进行渲染，并最终将渲染结果保存为png格式的图片。从官方给出的资料来看，webkit2png在Ubuntu上的安装还是比较简单的，在CentOS这一系列OS上的安装可能比较费劲。</p>
+<p><code>webkit2png</code>本身的参数和选项并不多，使用也比较简单。一般来说，我们可能用到的选项就是：</p>
+<pre><code>-<span class="ruby">o <span class="constant">FILE</span>, --output=<span class="constant">FILE</span>                 输出文件的路径
+</span>-<span class="ruby"><span class="constant">F</span> <span class="constant">FEATURE</span>, --feature=<span class="constant">FEATURE</span>         需要额外使用什么webkit功能。可选的也不多，也就javascript或者plugins
+</span>-<span class="ruby">w <span class="constant">SECONDS</span>, --wait=<span class="constant">SECONDS</span>            截图之前最多等待多长时间。这个也相当于设置一个超时机制。
+</span>-<span class="ruby">-encoded-url                         将后面传递的url参数当作url-encode过的来处理</span>
+</code></pre><p>使用本身很简单，接下来问题是。往往服务器操作系统是没有GUI的，直接在shell下运行webkit2png会遇到如下错误信息：</p>
+<pre><code>$ webkit2png -o out.png -F javascript <span class="string">http:</span><span class="comment">//www.baidu.com</span>
+<span class="string">webkit2png:</span> cannot connect to X <span class="string">server :</span><span class="number">99</span>
+</code></pre><p>为了解决这个问题，需要将之前直接的截图命令做一点改动：</p>
+<pre><code>$ xvfb-<span class="keyword">run</span> webkit2png -o <span class="keyword">out</span>.png -F javascript http:<span class="comment">//www.baidu.com</span>
+</code></pre><p>这时候就可以正常对网页截图了。但是很可能截出来的图清晰度不够，无法满足需求(这个不一定，我在Ubuntu下没有遇见这个问题，但是在CentOS上遇见了)。实际上<code>xvfb-run</code>这个命令是一个shell脚本，默认情况下，这个脚本位于<code>/usr/bin</code>。该脚本可以接收一个<code>--server-args</code>的选项。我们只需要添加该参数即可设置截图的分辨率：</p>
+<pre><code>$ xvfb-<span class="keyword">run</span> --server-<span class="keyword">args</span>=<span class="string">"-screen 0 640x480x16"</span> webkit2png -o <span class="keyword">out</span>.png -F javascript http:<span class="comment">//www.baidu.com</span>
+</code></pre><p>前面提到，<code>xvfb-run</code>是一个脚本。当我们不加<code>--server-args</code>的选项的时候，他是有默认值的，我们可以打开脚本看一下，我这里挑选出设置选项默认值的地方：</p>
+<pre><code><span class="variable">PROGNAME=</span>xvfb-run
+<span class="variable">SERVERNUM=</span><span class="number">99</span>
+<span class="variable">AUTHFILE=</span>
+<span class="variable">ERRORFILE=</span>/dev/<span class="constant">null</span>
+<span class="variable">STARTWAIT=</span><span class="number">3</span>
+<span class="variable">XVFBARGS=</span><span class="string">"-screen 0 640x480x8"</span>
+<span class="variable">LISTENTCP=</span><span class="string">"-nolisten tcp"</span>
+<span class="variable">XAUTHPROTO=</span>.
+</code></pre><p>这里的<code>XVFBARGS</code>实际上就是对应<code>--server-args</code>选项的默认值，将这里的默认值改成<code>-screen 0 640x480x16</code>，再截图基本图片清晰度就可以满足一般的截图需要了。另外，我们当时的需求是再一个Java Web项目中使用该工具进行截图。我们在测试的过程中发现，连续的截图请求中，后面的请求往往会失败，在错误日志中，我们看到下面的错误信息：</p>
+<pre><code><span class="string">webkit2png:</span> Fatal IO <span class="string">error:</span> client killed
+<span class="regexp">/usr/</span>bin/xvfb-<span class="string">run:</span> line <span class="number">171</span>: <span class="string">kill:</span> (<span class="number">2879</span>) - No such process
+</code></pre><p>实际上在<code>xvfb-run</code>脚本的第171行有一个kill当前Xvfb进程的过程：</p>
+<pre><code><span class="built_in">kill</span> <span class="variable">$XVFBPID</span>
+</code></pre><p>将这一行注释掉之后，连续的截图请求就能够正常处理了。至于为什么会这样，接下来我会研究一下之后，找时间专门写一篇文章介绍Xvfb以及这个脚本主要做什么。</p>
+  
+	</div>
+		<footer class="article-footer clearfix">
+<div class="article-catetags">
+
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/webkit2png/">webkit2png</a>
+  </div>
+
+</div>
+
+
+
+	<div class="article-share" id="share">
+	
+	<div class="share-jiathis">
+	  
+<div class="jiathis_style_24x24">
+	<a class="jiathis_button_tsina"></a>
+	<a class="jiathis_button_weixin"></a>
+	<a class="jiathis_button_renren"></a>
+	<a class="jiathis_button_qzone"></a>
+	<a class="jiathis_button_googleplus"></a>
+	<a class="jiathis_button_douban"></a>
+	<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+	<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+    var jiathis_config={
+    data_track_clickback:true,
+    sm:"copy,renren,cqq",
+    pic:"",
+    summary:"",
+    
+  </script> 
+<script type="text/javascript" src="//v3.jiathis.com/code/jia.js?uid=
+1358166128571307" charset="utf-8"></script>      
+
+	 </div>
+	
+	</div>
+
+
+</footer>
+
+   	       
+	</article>
+	
+<nav class="article-nav clearfix">
+ 
+
+<div class="next">
+<a href="/2014/09/19/Datetime-API-in-Java-8/"  title="Datetime API in Java 8">
+ <strong>下一篇：</strong><br/> 
+ <span>Datetime API in Java 8
+</span>
+</a>
+</div>
+
+</nav>
+
+	
+<section id="comments" class="comment">
+	<div class="ds-thread" data-thread-key="2014/09/19/webkit2png-简单使用/" data-title="webkit2png 简单使用" data-url="http://codingblogs.net/2014/09/19/webkit2png-简单使用/"></div>
+</section>
+
+
+</div>  
+      <div class="openaside"><a class="navbutton" href="#" title="显示侧边栏"></a></div>
+
+  <div id="toc" class="toc-aside">
+  <strong class="toc-title">文章目录</strong>
+ 
+ 
+ 
+  </div>
+
+<div id="asidepart">
+<div class="closeaside"><a class="closebutton" href="#" title="隐藏侧边栏"></a></div>
+<aside class="clearfix">
+
+  
+
+  
+<div class="tagslist">
+	<p class="asidetitle">标签</p>
+		<ul class="clearfix">
+		
+			
+				<li><a href="/tags/Java-8/" title="Java 8">Java 8<sup>4</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Datetime-API/" title="Datetime API">Datetime API<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/webkit2png/" title="webkit2png">webkit2png<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Stream-API/" title="Stream API">Stream API<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Lambda-Expression/" title="Lambda Expression">Lambda Expression<sup>1</sup></a></li>
+			
+		
+		</ul>
+</div>
+
+
+  
+  <div class="archiveslist">
+    <p class="asidetitle"><a href="/archives">归档</a></p>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/09/">九月 2014</a><span class="archive-list-count">5</span></li></ul>
+  </div>
+
+
+  <div class="rsspart">
+	<a href="/atom.xml" target="_blank" title="rss">RSS 订阅</a>
+</div>
+
+  <div class="weiboshow">
+  <p class="asidetitle">新浪微博</p>
+    <iframe width="100%" height="119" class="share_self"  frameborder="0" scrolling="no" src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=119&fansRow=2&ptype=1&speed=0&skin=9&isTitle=1&noborder=1&isWeibo=0&isFans=0&uid=1281765830&verifier=b65df5a4&dpc=1"></iframe>
+</div>
+
+
+</aside>
+</div>
+    </div>
+    <footer><div id="footer" >
+	
+	<div class="line">
+		<span></span>
+		<div class="author"></div>
+	</div>
+	
+	
+	<section class="info">
+		<p> Hello ,I&#39;m wawlian in ifeng.com. <br/>
+			This is my blog,believe it or not.</p>
+	</section>
+	 
+	<div class="social-font" class="clearfix">
+		
+		<a href="http://weibo.com/wawlian" target="_blank" class="icon-weibo" title="微博"></a>
+		
+		
+		<a href="https://github.com/wawlian" target="_blank" class="icon-github" title="github"></a>
+		
+		
+		<a href="http://stackoverflow.com/users/wawlian" target="_blank" class="icon-stack-overflow" title="stackoverflow"></a>
+		
+		
+		<a href="https://twitter.com/wawlian" target="_blank" class="icon-twitter" title="twitter"></a>
+		
+		
+		<a href="https://www.facebook.com/wawlian0" target="_blank" class="icon-facebook" title="facebook"></a>
+		
+		
+		
+		<a href="https://www.douban.com/people/61799727" target="_blank" class="icon-douban" title="豆瓣"></a>
+		
+		
+		<a href="http://www.zhihu.com/people/wawlian" target="_blank" class="icon-zhihu" title="知乎"></a>
+		
+		
+		<a href="https://plus.google.com/104724126254137490000?rel=author" target="_blank" class="icon-google_plus" title="Google+"></a>
+		
+		
+		<a href="mailto:xiongfeng0601@gmail.com" target="_blank" class="icon-email" title="Email Me"></a>
+		
+	</div>
+			
+		
+
+		<p class="copyright">
+		Powered by <a href="http://hexo.io" target="_blank" title="hexo">hexo</a> and Theme by <a href="https://github.com/wuchong/jacman" target="_blank" title="Jacman">Jacman</a> © 2015 
+		
+		<a href="/about" target="_blank" title="wawlian">wawlian</a>
+		
+		
+		</p>
+</div>
+</footer>
+    <script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/jquery.qrcode-0.12.0.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.navbar').click(function(){
+    $('header nav').toggleClass('shownav');
+  });
+  var myWidth = 0;
+  function getSize(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+  };
+  var m = $('#main'),
+      a = $('#asidepart'),
+      c = $('.closeaside'),
+      o = $('.openaside');
+  c.click(function(){
+    a.addClass('fadeOut').css('display', 'none');
+    o.css('display', 'block').addClass('fadeIn');
+    m.addClass('moveMain');
+  });
+  o.click(function(){
+    o.css('display', 'none').removeClass('beforeFadeIn');
+    a.css('display', 'block').removeClass('fadeOut').addClass('fadeIn');      
+    m.removeClass('moveMain');
+  });
+  $(window).scroll(function(){
+    o.css("top",Math.max(80,260-$(this).scrollTop()));
+  });
+  
+  $(window).resize(function(){
+    getSize(); 
+    if (myWidth >= 1024) {
+      $('header nav').removeClass('shownav');
+    }else{
+      m.removeClass('moveMain');
+      a.css('display', 'block').removeClass('fadeOut');
+      o.css('display', 'none');
+      
+      $('#toc.toc-aside').css('display', 'none');
+        
+    }
+  });
+});
+</script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var ai = $('.article-content>iframe'),
+      ae = $('.article-content>embed'),
+      t  = $('#toc'),
+      ta = $('#toc.toc-aside'),
+      o  = $('.openaside'),
+      c  = $('.closeaside');
+  if(ai.length>0){
+    ai.wrap('<div class="video-container" />');
+  };
+  if(ae.length>0){
+   ae.wrap('<div class="video-container" />');
+  };
+  c.click(function(){
+    ta.css('display', 'block').addClass('fadeIn');
+  });
+  o.click(function(){
+    ta.css('display', 'none');
+  });
+  $(window).scroll(function(){
+    ta.css("top",Math.max(140,320-$(this).scrollTop()));
+  });
+});
+</script>
+
+
+
+
+<script type="text/javascript">
+  var duoshuoQuery = {short_name:"wawlian"};
+  (function() {
+    var ds = document.createElement('script');
+    ds.type = 'text/javascript';ds.async = true;
+    ds.src = '//static.duoshuo.com/embed.js';
+    ds.charset = 'UTF-8';
+    (document.getElementsByTagName('head')[0] 
+    || document.getElementsByTagName('body')[0]).appendChild(ds);
+  })();
+</script> 
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.article-content').each(function(i){
+    $(this).find('img').each(function(){
+      if ($(this).parent().hasClass('fancybox')) return;
+      var alt = this.alt;
+      if (alt) $(this).after('<span class="caption">' + alt + '</span>');
+      $(this).wrap('<a href="' + this.src + '" title="' + alt + '" class="fancybox"></a>');
+    });
+    $(this).find('.fancybox').each(function(){
+      $(this).attr('rel', 'article' + i);
+    });
+  });
+  if($.fancybox){
+    $('.fancybox').fancybox();
+  }
+}); 
+</script>
+
+
+
+<!-- Analytics Begin -->
+
+
+
+
+
+<!-- Analytics End -->
+
+<!-- Totop Begin -->
+
+	<div id="totop">
+	<a title="返回顶部"><img src="/img/scrollup.png"/></a>
+	</div>
+	<script src="/js/totop.js"></script>
+
+<!-- Totop End -->
+
+<!-- MathJax Begin -->
+<!-- mathjax config similar to math.stackexchange -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+<!-- MathJax End -->
+
+<!-- Tiny_search Begin -->
+
+<!-- Tiny_search End -->
+
+  </body>
+</html>

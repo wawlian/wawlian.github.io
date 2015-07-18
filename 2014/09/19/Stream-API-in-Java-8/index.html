@@ -1,0 +1,779 @@
+
+ <!DOCTYPE HTML>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  
+    <title>Stream API in Java 8 | wawlian说</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no">
+    
+    <meta name="author" content="wawlian">
+    
+
+    
+    <meta name="description" content="1.什么是Stream在Java 8之前，我们经常会写类似这样的代码：
+List&amp;lt;String&amp;gt; wordList = ...
+int count = 0;
+for(String word : wordList) {
+    if(word.length() &amp;gt; 5) {
+        System.out.println(word)
+        count++;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Stream API in Java 8">
+<meta property="og:url" content="http://codingblogs.net/2014/09/19/Stream-API-in-Java-8/index.html">
+<meta property="og:site_name" content="wawlian说">
+<meta property="og:description" content="1.什么是Stream在Java 8之前，我们经常会写类似这样的代码：
+List&amp;lt;String&amp;gt; wordList = ...
+int count = 0;
+for(String word : wordList) {
+    if(word.length() &amp;gt; 5) {
+        System.out.println(word)
+        count++;">
+<meta property="og:updated_time" content="2015-07-18T14:02:27.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Stream API in Java 8">
+<meta name="twitter:description" content="1.什么是Stream在Java 8之前，我们经常会写类似这样的代码：
+List&amp;lt;String&amp;gt; wordList = ...
+int count = 0;
+for(String word : wordList) {
+    if(word.length() &amp;gt; 5) {
+        System.out.println(word)
+        count++;">
+<meta name="twitter:creator" content="@wawlian">
+<link rel="publisher" href="104724126254137490000">
+
+    
+    <link rel="alternative" href="/atom.xml" title="wawlian说" type="application/atom+xml">
+    
+    
+    <link rel="icon" href="/img/favicon.ico">
+    
+    
+    <link rel="apple-touch-icon" href="/img/jacman.jpg">
+    <link rel="apple-touch-icon-precomposed" href="/img/jacman.jpg">
+    
+    <link rel="stylesheet" href="/css/style.css" type="text/css">
+</head>
+
+  <body>
+    <header>
+      
+<div>
+		
+			<div id="textlogo">
+				<h1 class="site-name"><a href="/" title="wawlian说">wawlian说</a></h1>
+				<h2 class="blog-motto"></h2>
+			</div>
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="菜单">
+			</a></div>
+			<nav class="animated">
+				<ul>
+					<ul>
+					 
+						<li><a href="/">首页</a></li>
+					
+						<li><a href="/archives">归档</a></li>
+					
+					<li>
+ 					
+					<form class="search" action="//google.com/search" method="get" accept-charset="utf-8">
+						<label>Search</label>
+						<input type="search" id="search" name="q" autocomplete="off" maxlength="20" placeholder="搜索" />
+						<input type="hidden" name="q" value="site:codingblogs.net">
+					</form>
+					
+					</li>
+				</ul>
+			</nav>			
+</div>
+    </header>
+    <div id="container">
+      <div id="main" class="post" itemscope itemprop="blogPost">
+  
+	<article itemprop="articleBody"> 
+		<header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2014/09/19/Stream-API-in-Java-8/" title="Stream API in Java 8" itemprop="url">Stream API in Java 8</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="https://plus.google.com/104724126254137490000?rel=author" title="wawlian" target="_blank" itemprop="author">wawlian</a>
+		
+  <p class="article-time">
+    <time datetime="2014-09-19T11:26:08.000Z" itemprop="datePublished"> 发表于 2014-09-19</time>
+    
+  </p>
+</header>
+	<div class="article-content">
+		
+		<h1 id="1-什么是Stream">1.什么是Stream</h1><p>在Java 8之前，我们经常会写类似这样的代码：</p>
+<pre><code>List&lt;String&gt; wordList = ...
+int <span class="command">count</span> = <span class="number">0</span>;
+<span class="keyword">for</span>(String <span class="property">word</span> : wordList) {
+    <span class="keyword">if</span>(<span class="property">word</span>.<span class="property">length</span>() &gt; <span class="number">5</span>) {
+        System.out.println(<span class="property">word</span>)
+        <span class="command">count</span>++;
+    }
+}
+</code></pre><p>这段代码的功能很简单，对一个List集合中的元素进行迭代，对每一个元素(字符串)的长度进行判断，如果长度大于5，则将该元素打印到控制台输出，并且对计数器进行加一操作。这种风格的代码是在Java 8之前我们所习惯的风格。实际上也是典型的指令式编程风格的体现。在Java 8的集合框架中，为了更好的支持批量操作以及并行化，引入了Stream的概念。我们首先可以看一下上面这段代码的Java 8版本：</p>
+<pre><code><span class="type">List</span>&lt;<span class="type">String</span>&gt; wordList = ...
+<span class="built_in">int</span> count = wordList.stream<span class="literal">()</span>.filter(<span class="built_in">word</span> -&gt; <span class="built_in">word</span>.length<span class="literal">()</span> &gt; <span class="number">5</span>).count<span class="literal">()</span>;
+</code></pre><p>stream方法从集合对象中产生了一个<code>Stream对象</code>。filter方法产生了另外一个<code>Stream对象</code>，这个对象“含有”所有长度超过5的元素。最终count方法将这个Stream合并成一个最终结果。这里提到了Stream对象。从直觉上看，Stream实际上和Collection很像，我们可以提取出数据，做一些变换。但是二者有本质的区别。</p>
+<ul>
+<li>Stream对象本身并不存储元素。元素存储在底层集合对象中，或者根据需求生成。</li>
+<li>Stream操作并不改变源Stream，而是生成新的Steam</li>
+<li>Stream操作都是尽可能懒执行的。上面的filter操作是等到最终count操作的时候才最终执行。</li>
+</ul>
+<p>Stream操作除了顺序版本，还支持并行版本。上面的例子可以写成并行的版本。</p>
+<pre><code><span class="built_in">int</span> count = wordList.parallelStream<span class="literal">()</span>.filter(<span class="built_in">word</span> -&gt; <span class="built_in">word</span>.length<span class="literal">()</span> &gt; <span class="number">5</span>).count<span class="literal">()</span>;
+</code></pre><p>这样就可以采用集合框架的并行处理特性。</p>
+<p>实际上我们也可以看出，这是Java 8引入函数式编程风格的支持。Stream操作的风格是做什么，而不是怎么做。一般来说，使用Stream操作都会建立三个阶段的管道：</p>
+<ul>
+<li>创建Stream。</li>
+<li>通过中间操作将原始Stream变换成其他Stream。</li>
+<li>应用中间操作生成最终结果。</li>
+</ul>
+<h1 id="2-创建Stream">2.创建Stream</h1><p>实际上刚才我们已经看到了如何创建Stream。也就是调用集合对象的stream()或者parallelStream()方法即可。这两个方法实在Collection接口中实现的。对于数组来说，需要调用Stream接口的of(T… values)方法。</p>
+<pre><code><span class="keyword">Stream&lt;String&gt; </span><span class="keyword">stream </span>= <span class="keyword">Stream.of("I", </span><span class="string">"am"</span>, <span class="string">"wawlian"</span>)<span class="comment">;</span>
+</code></pre><p>此外，Arrays类提供了一个<code>stream(int[] array, int startInclusive, int endExclusive)</code>和一系列重载方法来指定数组中哪些元素来创建Stream。</p>
+<p>可以使用Stream.empty()方法创建一个空的Stream。</p>
+<p>可以使用Stream的generate()方法来创建无限的Stream。首先看一下该方法的原型：</p>
+<pre><code>static <span class="tag">&lt;<span class="title">T</span>&gt;</span> Stream<span class="tag">&lt;<span class="title">T</span>&gt;</span> generate(Supplier<span class="tag">&lt;<span class="title">T</span>&gt;</span> s)
+</code></pre><p>Supplier接口不出意外肯定也是一个函数接口。那么这个函数接口的abstract方法定义如下：</p>
+<pre><code>T <span class="function"><span class="title">get</span><span class="params">()</span></span>
+</code></pre><p>那么很明显，我们在generate方法中只需要提供一个() -&gt; {}模式的lambda表达式或者是一个无参数且无返回值的函数引用即可。下面看两个例子：</p>
+<pre><code>Stream.generate<span class="function"><span class="params">(() -&gt; {<span class="string">"Hello"</span>})</span>;
+<span class="title">Stream</span>.<span class="title">generate</span><span class="params">(Math::random())</span>;</span>
+</code></pre><p>Stream中还有一个iterate方法，其定义如下：</p>
+<pre><code>static &lt;<span class="literal">T</span>&gt; Stream&lt;<span class="literal">T</span>&gt; iterate(<span class="literal">T</span> seed, UnaryOperator&lt;<span class="literal">T</span>&gt; f);
+</code></pre><p>这个函数会使用seed作为种子创建一个无限的序列seed, f(seed), f(f(seed))…</p>
+<p>UnaryOperator接口本身并没有abstract方法，但是该接口继承自Function接口，有一个apply方法如下：</p>
+<pre><code>R apply<span class="list">(<span class="keyword">T</span> <span class="literal">t</span>)</span><span class="comment">;</span>
+</code></pre><p>这个方法接收一个参数，返回相应的值。这样，我们就可以创建一个1，2，3…这种的无限序列了。</p>
+<pre><code>Stream&lt;Long&gt; stream = Stream.iterate(<span class="number">1</span>, <span class="function"><span class="params">(long x)</span> -&gt;</span> {<span class="keyword">return</span> x + <span class="number">1</span>});
+</code></pre><h1 id="3-中间操作">3.中间操作</h1><ul>
+<li>filter方法</li>
+</ul>
+<p>filter方法从字面看就是起到过滤作用，返回的是另一个Stream对象。filter方法的原型如下：</p>
+<pre><code>Stream&lt;T&gt; <span class="function"><span class="title">filter</span><span class="params">(Predicate&lt;? super T&gt; predicate)</span></span>
+</code></pre><p>其中，我们在上一篇文章中其实已经遇到过Predicate接口。这个接口实际上表现的是一种判定的规则。其中有一个test方法：</p>
+<pre><code>boolean test<span class="list">(<span class="keyword">T</span> <span class="literal">t</span>)</span>
+</code></pre><p>所以，filter方法的参数可以是一个形如(T t)-&gt;{if() return true; else return false}之类的Lambda表达式。</p>
+<ul>
+<li>map方法</li>
+</ul>
+<p>map方法实际上是对集合中的所有元素执行某些变换操作，并生成新的Stream方法。方法原型如下：</p>
+<pre><code>&lt;R&gt; <span class="keyword">Stream&lt;R&gt; </span><span class="preprocessor">map</span>(<span class="preprocessor">Function</span>&lt;? super T,? extends R&gt; mapper)
+</code></pre><p>其中Function接口中有一个abstract方法apply:</p>
+<pre><code>R apply<span class="list">(<span class="keyword">T</span> <span class="literal">t</span>)</span><span class="comment">;</span>
+</code></pre><p>我们看一个将字符串转成大写字母的例子：</p>
+<pre><code><span class="built_in">List</span><span class="subst">&lt;</span><span class="built_in">String</span><span class="subst">&gt;</span> wordList <span class="subst">=</span> <span class="attribute">...</span>
+Stream<span class="subst">&lt;</span><span class="built_in">String</span><span class="subst">&gt;</span> stream <span class="subst">=</span> wordList<span class="built_in">.</span>stream()<span class="built_in">.</span><span class="built_in">map</span>(<span class="built_in">String</span><span class="tag">::toUpperCase</span>);
+</code></pre><p>再看一个取出每个字符串第一个字符的例子：</p>
+<pre><code><span class="built_in">List</span><span class="subst">&lt;</span><span class="built_in">String</span><span class="subst">&gt;</span> wordList <span class="subst">=</span> <span class="attribute">...</span>
+Stream<span class="subst">&lt;</span>Character<span class="subst">&gt;</span> stream <span class="subst">=</span> wordList<span class="built_in">.</span>stream()<span class="built_in">.</span><span class="built_in">map</span>((<span class="built_in">String</span> s) <span class="subst">-&gt; </span>{s<span class="built_in">.</span>chatAt(<span class="number">0</span>)});
+</code></pre><ul>
+<li>截取子Stream</li>
+</ul>
+<p>可以通过Stream<t> limit(long maxSize)方法来从源Stream中截取包含前maxSize元素的Stream。如果源Stream元素数量本身就不足maxSize，就返回源Stream中元素组成的Stream。看例子：</t></p>
+<pre><code>Stream.generate(<span class="attribute">Math</span>::random()).limit(<span class="number">5</span>);
+Stream.iterate<span class="function"><span class="params">(<span class="number">1</span>, (long x) -&gt; {<span class="keyword">return</span> x + <span class="number">1</span>})</span>.<span class="title">limit</span><span class="params">(<span class="number">5</span>)</span>;</span>
+</code></pre><p>第一行代码返回一个包含五个随机数的Stream，后一个例子返回返回类似[1,2,3,4,5]的Stream。</p>
+<p>而方法Stream<t> skip(long n)的行为却刚好和limit相反，他是从源Stream中忽略前n个元素。</t></p>
+<ul>
+<li>拼接Stream操作。</li>
+</ul>
+<p>可以通过concat方法拼接两个Stream。其方法原型如下：</p>
+<pre><code>static <span class="tag">&lt;<span class="title">T</span>&gt;</span> Stream<span class="tag">&lt;<span class="title">T</span>&gt;</span> concat(Stream<span class="php"><span class="preprocessor">&lt;?</span> extends T&gt; a,
+                            Stream<span class="preprocessor">&lt;?</span> extends T&gt; b)</span>
+</code></pre><p>非常简单，这个就不举例子了。</p>
+<ul>
+<li>有状态的中间操作。</li>
+</ul>
+<p>之前提到的中间变换操作都有一个特点，生成新的Stream都不以来源Stream的状态。但是有一些变换操作，实际上是需要根据源Stream的状态来进行的。比如，distinct方法。我们可以从字面上得知，该方法的行为类似于SQL中的关键词distinct。这个方法的实现明显就需要记录源Stream的状态。除此之外，还有一系列的Stream<t> sorted()方法，可以将源Stream变成排好序的新Stream。举个例子：</t></p>
+<pre><code><span class="built_in">List</span><span class="subst">&lt;</span><span class="built_in">String</span><span class="subst">&gt;</span> wordList <span class="subst">=</span> <span class="attribute">...</span>
+wordList<span class="built_in">.</span>stream()<span class="built_in">.</span>sorted(<span class="built_in">String</span><span class="tag">::length</span>);    
+</code></pre><p>这个例子实际上就是通过比较字符串长度来排序。这个排序与Collections.sort是有区别的，后者是in-place排序。</p>
+<h1 id="4-一些简单的归纳，合并操作">4.一些简单的归纳，合并操作</h1><p>我们创建Stream也好，进行中间的变换操作也好，都是为了最终获取到结果做铺垫。我们最关注的还是最终的结果。那么这一部分讲到的方法叫做Reduce，也就是我们前面讲到的终端操作。</p>
+<p>前面提到的count方法就是一个简单的终端操作。获取Stream中满足数量的元素个数。除此之外，还有max和min方法也是终端操作。我们看一下这两个方法的方法原型：</p>
+<pre><code>Optional<span class="variable">&lt;T&gt;</span> <span class="keyword">max</span>(Comparator<span class="variable">&lt;? super T&gt;</span> comparator);
+Optional<span class="variable">&lt;T&gt;</span> <span class="keyword">min</span>(Comparator<span class="variable">&lt;? super T&gt;</span> comparator);
+</code></pre><p>参数部分我们不再赘述。这里的返回值Optional是一个之前没遇到的内容。Optional是一个类。这个是一个容器对象，可能包含一个非null值，也可能不包含非null。我们知道，如果一个Stream是空的，对其进行max操作肯定得到的结果也是空的。毕竟，巧妇难为无米之炊嘛。那么我们以往的代码可能是这样：</p>
+<pre><code><span class="keyword">if</span>(ret == <span class="literal">null</span>) {
+    <span class="comment">//balabala</span>
+}<span class="keyword">else</span> ｛
+    <span class="comment">//别的balaba</span>
+}
+</code></pre><p>否则，很容易导致NullPointerException，这可能是Java中最烦人的一个异常。使用Optional之后，可以通过下面的代码来获取结果：</p>
+<pre><code><span class="built_in">List</span><span class="subst">&lt;</span><span class="built_in">String</span><span class="subst">&gt;</span> wordList <span class="subst">=</span> <span class="literal">new</span> ArrayList<span class="subst">&lt;&gt;</span>();
+Optional<span class="subst">&lt;</span><span class="built_in">String</span><span class="subst">&gt;</span> maybeMax <span class="subst">=</span> wordList<span class="built_in">.</span>stream()<span class="built_in">.</span><span class="keyword">max</span>(<span class="built_in">String</span><span class="tag">::length</span>) 
+maybeMax<span class="built_in">.</span>isPresent(System<span class="built_in">.</span>out<span class="tag">::println</span>)
+</code></pre><p>Optional类的isPresent()方法接收一个Consumer函数接口作为参数。这个接口我们在前面其实已经提到过。这个接口有一个抽象方法：</p>
+<pre><code>void accept<span class="list">(<span class="keyword">T</span> <span class="literal">t</span>)</span>
+</code></pre><p>通过这样的方式，将以前指令式的判断非null的代码编程函数式的编码风格。除此之外，当Optional中不含非null对象时，也可以做一些其他的操作。在Optional中有一个orElse方法。原形如下：</p>
+<pre><code>public T <span class="function"><span class="title">orElse</span><span class="params">(T other)</span></span>
+</code></pre><p>这个方法是当Optional中的值为null，返回一个别的值other。这个方法可以用来提供默认值。类似于Lua代码中的：</p>
+<pre><code><span class="keyword">local</span> x = y <span class="keyword">or</span> <span class="number">1</span>
+</code></pre><p>除此之外，Optional类还有一个高级版的orElseGet方法。这个方法接收一个函数接口Supplier。该函数接口有一个抽象方法：</p>
+<pre><code>T <span class="function"><span class="title">get</span><span class="params">()</span></span>；
+</code></pre><p>这个方法中我们就可以提供当值不存在时给默认值的逻辑。例如：</p>
+<pre><code>optional.<span class="function"><span class="title">orElseGet</span><span class="params">(Math::random)</span></span>
+</code></pre><p>这个例子就会在optional不包含值的时候生成一个随机数作为默认值。</p>
+<p>Stream接口中有一个findFirst()方法，要么返回要么包含第一个元素要么为空的Optional。我们看个例子：</p>
+<pre><code>Optional&lt;String&gt; firstOptional = wordList.stream<span class="params">()</span>.filter<span class="params">(s -&gt; s.startsWith<span class="params">(<span class="string">"Q"</span>)</span>)</span>.findFirst<span class="params">()</span>;
+</code></pre><p>这个例子返回的是第一个以字母Q开始的字符串。当然有可能就不存在这样一个字符串。</p>
+<p>Stream中还有一个Optional<t> findAny()，这个方法随意的从Steam取一个元素。不见得是哪个，结果也不可再现。这个操作是一个短路操作。此外，还有一组判断性的终端操作：</t></p>
+<pre><code>boolean <span class="function"><span class="title">allMatch</span><span class="params">(Predicate&lt;? super T&gt; predicate)</span></span>
+boolean <span class="function"><span class="title">noneMatch</span><span class="params">(Predicate&lt;? super T&gt; predicate)</span></span>
+boolean <span class="function"><span class="title">anyMatch</span><span class="params">(Predicate&lt;? super T&gt; predicate)</span></span>
+</code></pre><p>这些操作根据指定的规则来分别判定一个Stream中的元素是否都匹配规则、都不匹配规则、有匹配规则的。</p>
+<h1 id="5-reduce操作">5.reduce操作</h1><p>这里说的reduce操作也是终端操作。在Stream中提供了一系列重载的reduce方法。reduce方法允许我们用自己的方式去计算元素和或者将一个Stream对象中的元素以某种规律或者映射关联起来。</p>
+<pre><code>T reduce(T identity, BinaryOperator<span class="tag">&lt;<span class="title">T</span>&gt;</span> accumulator)
+Optional<span class="tag">&lt;<span class="title">T</span>&gt;</span> reduce(BinaryOperator<span class="tag">&lt;<span class="title">T</span>&gt;</span> accumulator)
+<span class="tag">&lt;<span class="title">U</span>&gt;</span> U reduce(U identity, BiFunction<span class="tag">&lt;<span class="title">U,?</span> <span class="attribute">super</span> <span class="attribute">T</span>,<span class="attribute">U</span>&gt;</span> accumulator, BinaryOperator<span class="tag">&lt;<span class="title">U</span>&gt;</span> combiner);
+</code></pre><p>在这里出现了几个陌生的函数式接口BinaryOperator, BiFunction。在BinaryOperator接口中，本身没有抽象方法，进一步查看文档，发现，实际上BinaryOperator接口继承自BiFunction接口。后者有一个抽象方法apply方法如下：</p>
+<pre><code>R apply<span class="list">(<span class="keyword">T</span> <span class="literal">t</span>, U u)</span>
+</code></pre><p>而对于BinaryOperator接口来说，只不过是T、U、R是同一种类型的特例而已。那么对于第一个reduce函数来说。其行为等价于下面的代码：</p>
+<pre><code>T <span class="literal">result</span> = identity;
+<span class="keyword">for</span> (T element : this stream)
+    <span class="literal">result</span> = accumulator.apply(<span class="literal">result</span>, element)
+<span class="keyword">return</span> <span class="literal">result</span>;
+</code></pre><p>实际上，对于sum、max、min甚至是字符串的拼接操作来说，都是这样的一种reduction操作。我们以sum为例：</p>
+<pre><code><span class="built_in">Integer</span> <span class="keyword">sum</span> <span class="subst">=</span> integers<span class="built_in">.</span>reduce(<span class="number">0</span>, (a, b) <span class="subst">-&gt; </span>a<span class="subst">+</span>b);
+<span class="built_in">Integer</span> <span class="keyword">sum</span> <span class="subst">=</span> integers<span class="built_in">.</span>reduce(<span class="number">0</span>, <span class="built_in">Integer</span><span class="tag">::sum</span>);
+</code></pre><p>而对于第二个reduce的重载来说，他的行为实际上等价于下面的代码：</p>
+<pre><code>boolean foundAny = <span class="literal">false</span>;
+T <span class="literal">result</span> = null;
+<span class="keyword">for</span> (T element : this stream) {
+<span class="keyword">if</span> (!foundAny) {
+    foundAny = <span class="literal">true</span>;
+    <span class="literal">result</span> = element;
+}<span class="keyword">else</span>
+    <span class="literal">result</span> = accumulator.apply(<span class="literal">result</span>, element);
+}
+<span class="keyword">return</span> foundAny ? <span class="type">Optional</span>.<span class="keyword">of</span>(<span class="literal">result</span>) : <span class="type">Optional</span>.empty();
+</code></pre><p>这个函数实际上是以集合中的第一个元素作为上一个reduce方法的第一个参数的版本。返回值方面，这个函数返回的是一个Optional类。这是因为，原始的Stream中可能根本就没有任何元素，那么返回就不像第一个方法那么确定了。</p>
+<p>在开始说第三个reduce方法之前，我们观察一下，前两个reduce函数中，适用于参数和返回值都是同一种类型的情况。那么现在有这样的一种情况，我们需要从一个Stream<string>类型中，计算所有字符串元素的length()的总数。这种情况下，输入是String但是返回是Integer。这种情况下是没办法套用前两个reduce方法的。这时候就用到了第三种方式的reduce方法。这种情况下的代码如下：</string></p>
+<pre><code>wordList.stream<span class="function"><span class="params">()</span>.<span class="title">reduce</span><span class="params">(<span class="number">0</span>, (total, str) -&gt; total + str.length(), (total1 + total2) -&gt; total1 + total2)</span>;</span>
+</code></pre><p>也就是说，accumulator主要负责accumulator.apply(result, element)，这个result初始值为identity。combinator用于合并中间结果。</p>
+<p>上面提到的reduce方法的函数接口类型的参数具有比较多的限制。例如对于accumulator必须满足：</p>
+<blockquote>
+<p>accumulator - an associative, non-interfering, stateless function for combining two values</p>
+</blockquote>
+<p>比如说对于associative，实际上就是满足结合律的要求。</p>
+<pre><code>(<span class="tag">a</span> op b) op c == <span class="tag">a</span> op (<span class="tag">b</span> op c)
+</code></pre><p>对于其他几条，可以参阅<a href="http://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html" target="_blank" rel="external">Package java.util.stream</a></p>
+<h1 id="6-收集Stream中的结果">6.收集Stream中的结果</h1><p>很多时候，我们对Stream进行了一系列的操作之后，并不见得希望将这些元素合并成一个最终结果，相反，可能只希望拿到变换之后的Stream中的元素而已。可以通过调用iterator()方法返回一个老式的迭代器。或者通过toArray方法来获取一个数组。</p>
+<pre><code>wordList.<span class="function"><span class="title">stream</span><span class="params">()</span></span>.<span class="function"><span class="title">toArray</span><span class="params">(String[]::new)</span></span>
+</code></pre><p>除了上文中提到的reduce函数之外，Stream还提供了另一种可变reduction操作。Stream中提供了下面这个方法：</p>
+<pre><code>&lt;<span class="keyword">R</span>&gt; <span class="keyword">R</span> collect(Supplier&lt;<span class="keyword">R</span>&gt; supplier, BiConsumer&lt;<span class="keyword">R</span>, ? super T&gt; accumulator, BiConsumer&lt;<span class="keyword">R</span>, <span class="keyword">R</span>&gt; combiner);
+</code></pre><p>这个方法主要由三个元素组成：</p>
+<ul>
+<li>supplier：用来创建目标对象的实例。</li>
+<li>accumulator：往目标对象中添加一个元素。</li>
+<li>combinator: 将两个目标对象合并成一个目标对象。</li>
+</ul>
+<p>加入我们需要将Stream中的元素统一收集到一个HashSet中。我们可以这么处理：</p>
+<pre><code>HashSet&lt;String&gt; retSet = stream.collect(HashSet::<span class="keyword">new</span>, HashSet::add, HashSet::addAll)
+</code></pre><p>这个方法本身非常复杂，一般来说我们很少用得上。Stream中提供了一个重载的collect方法，接收一个Collector接口作为参数。</p>
+<pre><code>&lt;R,A&gt; R <span class="function"><span class="title">collect</span><span class="params">(Collector&lt;? super T,A,R&gt; collector)</span></span>
+</code></pre><p>Collector是由四部分共同协作来将每一个entry累加到一个可变的容器中，并且可以对结果做一次最终的变换。这四部分：</p>
+<ul>
+<li>创建结果容器 (supplier()) </li>
+<li>将一个新的数据元素吸收到结果容器中。(accumulator()) </li>
+<li>将两个结果容器合并成一个。 (combiner()) </li>
+<li>对结果容器执行可选的最终变换。(finisher()) </li>
+</ul>
+<p>很容易猜到，实际上这几个方法都是Collector接口的方法。此外，Collector接口还提供了将一组函数接口转换成Collector接口的default方法。Java 8还提供了一个Collectors类。同Arrays和Collections一样，这个类实际上也是一个工具类，其中包含了若干工厂方法，可以生成一些常见的Collector。</p>
+<p>如果要将Stream中的元素收集到list或者set中，可以这样:</p>
+<pre><code><span class="built_in">List</span>&lt;<span class="built_in">String</span>&gt; retList = stream.collect(Collectors.toList());
+<span class="built_in">Set</span>&lt;<span class="built_in">String</span>&gt; retSet = stream.collect(Collectors.toSet());
+</code></pre><p>如果需要控制返回结合类型的具体实现类，还可以这样处理：</p>
+<pre><code>TreeSet&lt;String&gt; retSet = stream.collect(Collectors.toSet(TreeSet::<span class="keyword">new</span>));
+</code></pre><p>如果可以想将Stream中的String元素拼接起来返回，可以使用Collectors.joining()方法：</p>
+<pre><code>String ret = stream.collect<span class="params">(Collectors.joining<span class="params">()</span>)</span>;
+String ret = stream.collect<span class="params">(Collectors.joining<span class="params">(<span class="string">","</span>)</span>)</span>;
+</code></pre><p>如果元素是对象类型，我们还可以在之前做一些map操作：</p>
+<pre><code><span class="built_in">String</span> ret <span class="subst">=</span> stream<span class="built_in">.</span><span class="built_in">map</span>(Object<span class="tag">::toString</span>)<span class="built_in">.</span>collect(Collectors<span class="built_in">.</span>joining());
+</code></pre><p>如果需要将Stream归并成max、min、average之类的值，可以使用summarizingInt、summarizingLong、summarizingDouble方法，并且返回对应的IntSummaryStatistics、LongSummaryStatistics、DoubleSummaryStatistics：</p>
+<pre><code>IntSummaryStatistics summary = stream.collect<span class="params">(Collectors.summarizingInt<span class="params">(String::length)</span>)</span>;
+double avg = summary.getAverage<span class="params">()</span>;
+double <span class="built_in">max</span> = summary.getMax<span class="params">()</span>;
+</code></pre><h1 id="7-收集Stream中的元素到Map">7.收集Stream中的元素到Map</h1><p>假设有Stream<student>对象，现在需要将元素收集到一个Map，以id为key，值为学生的GPA。Collectors提供了toMap方法。该方法接收两个参数；</student></p>
+<pre><code>public <span class="literal">static</span> &lt;T,K,U&gt; Collector&lt;T,?,<span class="built_in">Map</span>&lt;K,U&gt;&gt; toMap(<span class="built_in">Function</span>&lt;? <span class="keyword">super</span> T,? <span class="keyword">extends</span> K&gt; keyMapper,
+                                                    <span class="built_in">Function</span>&lt;? <span class="keyword">super</span> T,? <span class="keyword">extends</span> U&gt; valueMapper)
+</code></pre><p>我们可以这样处理：</p>
+<pre><code><span class="tag">Map</span>&lt;<span class="tag">Integer</span>, <span class="tag">Double</span>&gt; <span class="tag">studentToGPA</span>
+         <span class="tag">students</span><span class="class">.stream</span>()<span class="class">.collect</span>(<span class="tag">Collectors</span><span class="class">.toMap</span>(<span class="rule"><span class="attribute">Student</span>:<span class="value">:getId, student -&gt; <span class="function">computeGPA</span>(student)))</span></span>;
+</code></pre><p>如果我们需要Map的值为元素本身，可以给第二个函数传递静态默认方法Function.identity()即可。</p>
+<pre><code><span class="tag">Map</span>&lt;<span class="tag">Integer</span>, <span class="tag">Student</span>&gt; <span class="tag">studentToGPA</span>
+             <span class="tag">students</span><span class="class">.stream</span>()<span class="class">.collect</span>(<span class="tag">Collectors</span><span class="class">.toMap</span>(<span class="rule"><span class="attribute">Student</span>:<span class="value">:getId, Function.<span class="function">identity</span>())</span></span>;
+</code></pre><p>如果一个key有多个值，那么collector会抛出IllegalStateException。我们还可以再提供一个函数来定义这种情况下如何处理：</p>
+<pre><code>Stream<span class="subst">&lt;</span><span class="built_in">Locale</span><span class="subst">&gt;</span> locales <span class="subst">=</span> Stream<span class="built_in">.</span>of(<span class="built_in">Locale</span><span class="built_in">.</span>getAvailableLocales());
+<span class="built_in">Map</span><span class="subst">&lt;</span><span class="built_in">String</span>, <span class="built_in">String</span><span class="subst">&gt;</span> languageNames <span class="subst">=</span> locales<span class="built_in">.</span>collect(Collectors<span class="built_in">.</span>toMap(
+    l <span class="subst">-&gt; </span>l<span class="built_in">.</span>getDisplayLanguage(),
+    l <span class="subst">-&gt; </span>l<span class="built_in">.</span>getDisplayCountry(l),
+    (existValue, newValue) <span class="subst">-&gt; </span>existValue
+));
+</code></pre><p>在这个例子中，由于比如说英语可能出现在美国、英国，所以会出现冲突的情况，由于我们提供了第三个函数，该函数的行为是保留已有的值。那么对于英语来说，只可能出现一次。</p>
+<p>接着这个例子，假设我们想知道对于所有国家来说，使用的语言有哪些。我们可以这样处理：</p>
+<pre><code>Stream<span class="subst">&lt;</span><span class="built_in">Locale</span><span class="subst">&gt;</span> locales <span class="subst">=</span> Stream<span class="built_in">.</span>of(<span class="built_in">Locale</span><span class="built_in">.</span>getAvailableLocales());
+<span class="built_in">Map</span><span class="subst">&lt;</span><span class="built_in">String</span>, <span class="built_in">Set</span><span class="subst">&lt;</span><span class="built_in">String</span><span class="subst">&gt;&gt;</span> countryLanguages <span class="subst">=</span> locales<span class="built_in">.</span>collect(Collectors<span class="built_in">.</span>toMap(
+    l <span class="subst">-&gt; </span>l<span class="built_in">.</span>getDisplayCountry(l),
+    l <span class="subst">-&gt; </span>Collections<span class="built_in">.</span>singleton(l<span class="built_in">.</span>getDisplayLanguage())
+    (a, b) <span class="subst">-&gt; </span>{
+        <span class="built_in">Set</span><span class="subst">&lt;</span><span class="built_in">String</span><span class="subst">&gt;</span> r <span class="subst">=</span> <span class="literal">new</span> HashSet<span class="subst">&lt;&gt;</span>(a);
+        r<span class="built_in">.</span>addAll(b);
+        <span class="keyword">return</span> r;
+    }
+);
+</code></pre><p>当然，在toMap的时候，也是可以给collect方法传递第二个参数来控制返回的具体类型的。</p>
+<h1 id="8-分组和分区(Group和Partition)">8.分组和分区(Group和Partition)</h1><p>上面那个对于所有国家来说，获取使用的语言有哪些的例子实际上是一个很冗长的处理。这种场景实际上非常类似SQL里面的group by语法。Collectors对此也做了抽象，定义了方法groupingBy:</p>
+<pre><code>public static &lt;T,<span class="keyword">K</span>&gt; Collector&lt;T,?,<span class="keyword">Map</span>&lt;<span class="keyword">K</span>,<span class="keyword">List</span>&lt;T&gt;&gt;&gt; groupingBy(<span class="keyword">Function</span>&lt;? super T,? extends <span class="keyword">K</span>&gt; classifier)
+public static &lt;T,<span class="keyword">K</span>,A,<span class="keyword">D</span>&gt; Collector&lt;T,?,<span class="keyword">Map</span>&lt;<span class="keyword">K</span>,<span class="keyword">D</span>&gt;&gt; groupingBy(<span class="keyword">Function</span>&lt;? super T,? extends <span class="keyword">K</span>&gt; classifier,
+                                                       Collector&lt;? super T,A,<span class="keyword">D</span>&gt; downstream)
+public static &lt;T,<span class="keyword">K</span>,<span class="keyword">D</span>,A,M extends <span class="keyword">Map</span>&lt;<span class="keyword">K</span>,<span class="keyword">D</span>&gt;&gt; Collector&lt;T,?,M&gt; groupingBy(<span class="keyword">Function</span>&lt;? super T,? extends <span class="keyword">K</span>&gt; classifier,
+                                                                       Supplier&lt;M&gt; mapFactory,
+                                                                       Collector&lt;? super T,A,<span class="keyword">D</span>&gt; downstream)
+</code></pre><p>这个方法有三个构成因子：</p>
+<ul>
+<li>classifier：表示分类依据。</li>
+<li>mapFactory：生成指定类型空Map的工厂。</li>
+<li>downstream：一个实现了下游归并操作的Collector。</li>
+</ul>
+<p>一头雾水，对吧。看例子吧。对于上面提到的那个场景，可以使用第一个groupingBy方法：</p>
+<pre><code><span class="built_in">Map</span><span class="subst">&lt;</span><span class="built_in">String</span>, <span class="built_in">List</span><span class="subst">&lt;</span>Locales<span class="subst">&gt;&gt;</span> countryLocales <span class="subst">=</span> locales<span class="built_in">.</span>collect(
+    Collectors<span class="built_in">.</span>groupingBy(<span class="built_in">Locale</span><span class="tag">::getDisplayCountry</span>));
+</code></pre><p>这里的方法引用Locale::getDisplayCountry就是classifier。如果提供的classifier是一个Predicate类型的函数，方法从groupingBy变成partitioningBy，那么Stream中的元素就被分成两个List。</p>
+<pre><code><span class="built_in">Map</span><span class="subst">&lt;</span><span class="built_in">Boolean</span>, <span class="built_in">List</span><span class="subst">&lt;</span>Locales<span class="subst">&gt;&gt;</span> englishAndOtherLocales <span class="subst">=</span> locales<span class="built_in">.</span>collect(Collectors<span class="built_in">.</span>partitioningBy(
+    l <span class="subst">-&gt; </span>l<span class="built_in">.</span>getLanguage()<span class="built_in">.</span><span class="keyword">equals</span>(<span class="string">"en"</span>)
+));
+<span class="built_in">List</span><span class="subst">&lt;</span>Locales<span class="subst">&gt;</span> englishLocales <span class="subst">=</span> englishAndOtherLocales<span class="built_in">.</span>get(<span class="literal">true</span>);
+</code></pre><p>groupingBy返回的是值为List的Map，如果需要对这些List做一些其他操作，还可以在调用groupingBy的时候提供另一个Collector，也就是第二个参数downstream。例如，我们需要将List转成Set：</p>
+<pre><code><span class="built_in">Map</span><span class="subst">&lt;</span><span class="built_in">String</span>, <span class="built_in">Set</span><span class="subst">&lt;</span><span class="built_in">Locale</span><span class="subst">&gt;&gt;</span> countryLocales <span class="subst">=</span> locales<span class="built_in">.</span>collect(
+    Collectors<span class="built_in">.</span>groupingBy(<span class="built_in">Locale</span><span class="tag">::getCountry</span>, Collectors<span class="built_in">.</span>toSet())
+);
+</code></pre><p>downstream还可以是其他很多种类的Collector，我们举几个例子看一下：</p>
+<ul>
+<li>counting</li>
+</ul>
+<p>计算元素数量</p>
+<pre><code><span class="built_in">Map</span><span class="subst">&lt;</span><span class="built_in">String</span>, Long<span class="subst">&gt;</span> countryLocaleCount <span class="subst">=</span> locales<span class="built_in">.</span>collect(
+    Collectors<span class="built_in">.</span>groupingBy(<span class="built_in">Locale</span><span class="tag">::getCountry</span>, Collectors<span class="built_in">.</span>counting())
+);
+</code></pre><p>这个例子计算每个国家使用的语言种类。</p>
+<ul>
+<li>summingInt summingLong summingDouble</li>
+</ul>
+<p>接收函数作为参数，应用于每一个元素，返回相应的数值类型，并且计算总和</p>
+<pre><code>Map<span class="variable">&lt;String, Integer&gt;</span> <span class="keyword">state</span>Population = cities.collect(
+    Collectors.groupingBy(City::getState, summingInt(City::getPopulation))
+);
+</code></pre><p>这个例子计算每个州人口总数。</p>
+<ul>
+<li>maxBy minBy</li>
+</ul>
+<p>接收Comparator然后找出最大的、最小的。</p>
+<pre><code><span class="built_in">Map</span><span class="subst">&lt;</span><span class="built_in">String</span>, City<span class="subst">&gt;</span> maxPopulationCity <span class="subst">=</span> cities<span class="built_in">.</span>collect(
+        Collectors<span class="built_in">.</span>groupingBy(City<span class="tag">::getState</span>, maxBy(Comparator<span class="built_in">.</span>comparing(City<span class="tag">::getPopulation</span>)))
+);
+</code></pre><p>这个例子找出每个州里面人数最大的城市。</p>
+<h1 id="9-_原是类型Stream">9. 原是类型Stream</h1><p>我们之前针对原始数据类型使用的都是类似于Stream<integer>的形式，实际上Java 8为原是类型提供了几个专门的类。IntStream、LongStream和DoubleStream。对于boolean、byte、char、short类型，Java 8没有专门提供，可以使用IntStream。而对于float类型，则可以使用DoubleStream。</integer></p>
+<p>大部分我们之前使用的Stream的方法都可以照常使用，这些Stream根据数据类型的特点还提供了一些特有的方法。此外也已将其他的一些Stream通过mapToInt之类的方法变换成IntStream。</p>
+<pre><code>Stream<span class="subst">&lt;</span><span class="built_in">String</span><span class="subst">&gt;</span> words <span class="subst">=</span> <span class="attribute">...</span>;
+IntStream lengths <span class="subst">=</span> words<span class="built_in">.</span>mapTpInt(<span class="built_in">String</span><span class="tag">::length</span>);
+</code></pre><h1 id="10-并行Stream">10.并行Stream</h1><p>Stream的引入可以使针对集合的批量操作并行化变得简单。默认情况下Stream操作生成的都是顺序Stream，我们可以使用Collection接口中的parallelStream()方法来获取并行的Stream。只要是并行Stream，当终端操作执行，前面那些懒执行的中间操旧就会并行进行。但是有一点需要注意的是，这些中间操做是无状态的，执行顺序可以是任意的。</p>
+<p>此外，我们需要保证传递给并行Stream的函数中的逻辑是线程安全的。</p>
+<pre><code><span class="type">Stream</span>&lt;<span class="type">String</span>&gt; words = ...
+<span class="built_in">int</span><span class="literal">[]</span> shortWords = <span class="keyword">new</span> <span class="built_in">int</span>[<span class="number">12</span>];
+words.parallel<span class="literal">()</span>.forEach(s -&gt; {<span class="keyword">if</span>(s.length<span class="literal">()</span> &lt; <span class="number">12</span>) shortWords[s.length<span class="literal">()</span>]++;});
+</code></pre><p>这段代码就是线程不安全的，这种方式是不可取的。</p>
+<h1 id="参考文献">参考文献</h1><blockquote>
+<p>1.<a href="http://www.amazon.com/Java-SE-8-Really-Impatient/dp/0321927761" target="_blank" rel="external">Java SE 8 for the Really Impatient</a></p>
+<p>这是一本讲述Java 8 新特性的书，可能也是目前唯一的成体系的讲解Java 8新特性的书籍。内容非常全面，里面讲解新特性的例子非常的妙，简短但是又很有说服力。本文中的很多例子都来自这本书。并且归纳出了很多新特性需要注意的地方。另外，作者Cay S. Horstmann就是大名鼎鼎的《Core Java》的作者之一。</p>
+<p>2.<a href="http://www.angelikalanger.com/Lambdas/Lambdas.pdf" target="_blank" rel="external">Lambda Expressions in Java Tutorial</a></p>
+<p>这是一个培训机构的一份指导书，侧重于讲解Java 8中的Lambda表达式，本文中关于Lambda表达式的存在形式以及开头的例子都来源于该文献。</p>
+<p>3.<a href="http://docs.oracle.com/javase/8/docs/api/index.html" target="_blank" rel="external">Java 8 API Doc</a></p>
+<p>4.<a href="http://docs.oracle.com/javase/tutorial/" target="_blank" rel="external">The Java Tutorial</a></p>
+<p>官方的指导教材，目前已经针对Java 8作了全面的更新，优点是官方出品，权威，全面。缺点是讲解Lambda表达式新特性时，混合着很多关于Stream的内容，非常不利于新手快速了解新特性，并且语言也相对晦涩。</p>
+<p>5.<a href="http://codingblogs.net/2014/03/27/java8newfeature/">Java 8新特性</a></p>
+<p>官方Java 8新特性列表的中文版。</p>
+</blockquote>
+  
+	</div>
+		<footer class="article-footer clearfix">
+<div class="article-catetags">
+
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/Java-8/">Java 8</a><a href="/tags/Stream-API/">Stream API</a>
+  </div>
+
+</div>
+
+
+
+	<div class="article-share" id="share">
+	
+	<div class="share-jiathis">
+	  
+<div class="jiathis_style_24x24">
+	<a class="jiathis_button_tsina"></a>
+	<a class="jiathis_button_weixin"></a>
+	<a class="jiathis_button_renren"></a>
+	<a class="jiathis_button_qzone"></a>
+	<a class="jiathis_button_googleplus"></a>
+	<a class="jiathis_button_douban"></a>
+	<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+	<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+    var jiathis_config={
+    data_track_clickback:true,
+    sm:"copy,renren,cqq",
+    pic:"",
+    summary:"",
+    
+  </script> 
+<script type="text/javascript" src="//v3.jiathis.com/code/jia.js?uid=
+1358166128571307" charset="utf-8"></script>      
+
+	 </div>
+	
+	</div>
+
+
+</footer>
+
+   	       
+	</article>
+	
+<nav class="article-nav clearfix">
+ 
+ <div class="prev" >
+ <a href="/2014/09/19/Datetime-API-in-Java-8/" title="Datetime API in Java 8">
+  <strong>上一篇：</strong><br/>
+  <span>
+  Datetime API in Java 8</span>
+</a>
+</div>
+
+
+<div class="next">
+<a href="/2014/09/19/Lambda-Expression-in-Java-8/"  title="Lambda Expression in Java 8">
+ <strong>下一篇：</strong><br/> 
+ <span>Lambda Expression in Java 8
+</span>
+</a>
+</div>
+
+</nav>
+
+	
+<section id="comments" class="comment">
+	<div class="ds-thread" data-thread-key="2014/09/19/Stream-API-in-Java-8/" data-title="Stream API in Java 8" data-url="http://codingblogs.net/2014/09/19/Stream-API-in-Java-8/"></div>
+</section>
+
+
+</div>  
+      <div class="openaside"><a class="navbutton" href="#" title="显示侧边栏"></a></div>
+
+  <div id="toc" class="toc-aside">
+  <strong class="toc-title">文章目录</strong>
+ 
+ <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-什么是Stream"><span class="toc-number">1.</span> <span class="toc-text">1.什么是Stream</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-创建Stream"><span class="toc-number">2.</span> <span class="toc-text">2.创建Stream</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-中间操作"><span class="toc-number">3.</span> <span class="toc-text">3.中间操作</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-一些简单的归纳，合并操作"><span class="toc-number">4.</span> <span class="toc-text">4.一些简单的归纳，合并操作</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-reduce操作"><span class="toc-number">5.</span> <span class="toc-text">5.reduce操作</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-收集Stream中的结果"><span class="toc-number">6.</span> <span class="toc-text">6.收集Stream中的结果</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#7-收集Stream中的元素到Map"><span class="toc-number">7.</span> <span class="toc-text">7.收集Stream中的元素到Map</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#8-分组和分区(Group和Partition)"><span class="toc-number">8.</span> <span class="toc-text">8.分组和分区(Group和Partition)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#9-_原是类型Stream"><span class="toc-number">9.</span> <span class="toc-text">9. 原是类型Stream</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#10-并行Stream"><span class="toc-number">10.</span> <span class="toc-text">10.并行Stream</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#参考文献"><span class="toc-number">11.</span> <span class="toc-text">参考文献</span></a></li></ol>
+ 
+  </div>
+
+<div id="asidepart">
+<div class="closeaside"><a class="closebutton" href="#" title="隐藏侧边栏"></a></div>
+<aside class="clearfix">
+
+  
+
+  
+<div class="tagslist">
+	<p class="asidetitle">标签</p>
+		<ul class="clearfix">
+		
+			
+				<li><a href="/tags/Java-8/" title="Java 8">Java 8<sup>4</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Datetime-API/" title="Datetime API">Datetime API<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/webkit2png/" title="webkit2png">webkit2png<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Stream-API/" title="Stream API">Stream API<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Lambda-Expression/" title="Lambda Expression">Lambda Expression<sup>1</sup></a></li>
+			
+		
+		</ul>
+</div>
+
+
+  
+  <div class="archiveslist">
+    <p class="asidetitle"><a href="/archives">归档</a></p>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/09/">九月 2014</a><span class="archive-list-count">5</span></li></ul>
+  </div>
+
+
+  <div class="rsspart">
+	<a href="/atom.xml" target="_blank" title="rss">RSS 订阅</a>
+</div>
+
+  <div class="weiboshow">
+  <p class="asidetitle">新浪微博</p>
+    <iframe width="100%" height="119" class="share_self"  frameborder="0" scrolling="no" src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=119&fansRow=2&ptype=1&speed=0&skin=9&isTitle=1&noborder=1&isWeibo=0&isFans=0&uid=1281765830&verifier=b65df5a4&dpc=1"></iframe>
+</div>
+
+
+</aside>
+</div>
+    </div>
+    <footer><div id="footer" >
+	
+	<div class="line">
+		<span></span>
+		<div class="author"></div>
+	</div>
+	
+	
+	<section class="info">
+		<p> Hello ,I&#39;m wawlian in ifeng.com. <br/>
+			This is my blog,believe it or not.</p>
+	</section>
+	 
+	<div class="social-font" class="clearfix">
+		
+		<a href="http://weibo.com/wawlian" target="_blank" class="icon-weibo" title="微博"></a>
+		
+		
+		<a href="https://github.com/wawlian" target="_blank" class="icon-github" title="github"></a>
+		
+		
+		<a href="http://stackoverflow.com/users/wawlian" target="_blank" class="icon-stack-overflow" title="stackoverflow"></a>
+		
+		
+		<a href="https://twitter.com/wawlian" target="_blank" class="icon-twitter" title="twitter"></a>
+		
+		
+		<a href="https://www.facebook.com/wawlian0" target="_blank" class="icon-facebook" title="facebook"></a>
+		
+		
+		
+		<a href="https://www.douban.com/people/61799727" target="_blank" class="icon-douban" title="豆瓣"></a>
+		
+		
+		<a href="http://www.zhihu.com/people/wawlian" target="_blank" class="icon-zhihu" title="知乎"></a>
+		
+		
+		<a href="https://plus.google.com/104724126254137490000?rel=author" target="_blank" class="icon-google_plus" title="Google+"></a>
+		
+		
+		<a href="mailto:xiongfeng0601@gmail.com" target="_blank" class="icon-email" title="Email Me"></a>
+		
+	</div>
+			
+		
+
+		<p class="copyright">
+		Powered by <a href="http://hexo.io" target="_blank" title="hexo">hexo</a> and Theme by <a href="https://github.com/wuchong/jacman" target="_blank" title="Jacman">Jacman</a> © 2015 
+		
+		<a href="/about" target="_blank" title="wawlian">wawlian</a>
+		
+		
+		</p>
+</div>
+</footer>
+    <script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/jquery.qrcode-0.12.0.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.navbar').click(function(){
+    $('header nav').toggleClass('shownav');
+  });
+  var myWidth = 0;
+  function getSize(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+  };
+  var m = $('#main'),
+      a = $('#asidepart'),
+      c = $('.closeaside'),
+      o = $('.openaside');
+  c.click(function(){
+    a.addClass('fadeOut').css('display', 'none');
+    o.css('display', 'block').addClass('fadeIn');
+    m.addClass('moveMain');
+  });
+  o.click(function(){
+    o.css('display', 'none').removeClass('beforeFadeIn');
+    a.css('display', 'block').removeClass('fadeOut').addClass('fadeIn');      
+    m.removeClass('moveMain');
+  });
+  $(window).scroll(function(){
+    o.css("top",Math.max(80,260-$(this).scrollTop()));
+  });
+  
+  $(window).resize(function(){
+    getSize(); 
+    if (myWidth >= 1024) {
+      $('header nav').removeClass('shownav');
+    }else{
+      m.removeClass('moveMain');
+      a.css('display', 'block').removeClass('fadeOut');
+      o.css('display', 'none');
+      
+      $('#toc.toc-aside').css('display', 'none');
+        
+    }
+  });
+});
+</script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var ai = $('.article-content>iframe'),
+      ae = $('.article-content>embed'),
+      t  = $('#toc'),
+      ta = $('#toc.toc-aside'),
+      o  = $('.openaside'),
+      c  = $('.closeaside');
+  if(ai.length>0){
+    ai.wrap('<div class="video-container" />');
+  };
+  if(ae.length>0){
+   ae.wrap('<div class="video-container" />');
+  };
+  c.click(function(){
+    ta.css('display', 'block').addClass('fadeIn');
+  });
+  o.click(function(){
+    ta.css('display', 'none');
+  });
+  $(window).scroll(function(){
+    ta.css("top",Math.max(140,320-$(this).scrollTop()));
+  });
+});
+</script>
+
+
+
+
+<script type="text/javascript">
+  var duoshuoQuery = {short_name:"wawlian"};
+  (function() {
+    var ds = document.createElement('script');
+    ds.type = 'text/javascript';ds.async = true;
+    ds.src = '//static.duoshuo.com/embed.js';
+    ds.charset = 'UTF-8';
+    (document.getElementsByTagName('head')[0] 
+    || document.getElementsByTagName('body')[0]).appendChild(ds);
+  })();
+</script> 
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.article-content').each(function(i){
+    $(this).find('img').each(function(){
+      if ($(this).parent().hasClass('fancybox')) return;
+      var alt = this.alt;
+      if (alt) $(this).after('<span class="caption">' + alt + '</span>');
+      $(this).wrap('<a href="' + this.src + '" title="' + alt + '" class="fancybox"></a>');
+    });
+    $(this).find('.fancybox').each(function(){
+      $(this).attr('rel', 'article' + i);
+    });
+  });
+  if($.fancybox){
+    $('.fancybox').fancybox();
+  }
+}); 
+</script>
+
+
+
+<!-- Analytics Begin -->
+
+
+
+
+
+<!-- Analytics End -->
+
+<!-- Totop Begin -->
+
+	<div id="totop">
+	<a title="返回顶部"><img src="/img/scrollup.png"/></a>
+	</div>
+	<script src="/js/totop.js"></script>
+
+<!-- Totop End -->
+
+<!-- MathJax Begin -->
+<!-- mathjax config similar to math.stackexchange -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+<!-- MathJax End -->
+
+<!-- Tiny_search Begin -->
+
+<!-- Tiny_search End -->
+
+  </body>
+</html>

@@ -1,0 +1,893 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  
+  <title><![CDATA[wawlian说]]></title>
+  
+  <link href="/atom.xml" rel="self"/>
+  <link href="http://codingblogs.net//"/>
+  <updated>2015-07-18T13:59:54.000Z</updated>
+  <id>http://codingblogs.net//</id>
+  
+  <author>
+    <name><![CDATA[wawlian]]></name>
+    
+  </author>
+  
+  <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title><![CDATA[webkit2png 简单使用]]></title>
+    <link href="http://codingblogs.net/2014/09/19/webkit2png-%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/"/>
+    <id>http://codingblogs.net/2014/09/19/webkit2png-简单使用/</id>
+    <published>2014-09-19T11:29:39.000Z</published>
+    <updated>2015-07-18T13:59:54.000Z</updated>
+    <content type="html"><![CDATA[<p>最近需要做一个网页截图服务。经过一些调研之后，我们选定一了一个基于python的工具 <a href="https://github.com/AdamN/python-webkit2png/" target="_blank" rel="external">webkit2png</a>。这个工具本身可以抓取一个网页，然后使用webkit引擎对其进行渲染，并最终将渲染结果保存为png格式的图片。从官方给出的资料来看，webkit2png在Ubuntu上的安装还是比较简单的，在CentOS这一系列OS上的安装可能比较费劲。</p>
+<p><code>webkit2png</code>本身的参数和选项并不多，使用也比较简单。一般来说，我们可能用到的选项就是：</p>
+<pre><code>-<span class="ruby">o <span class="constant">FILE</span>, --output=<span class="constant">FILE</span>                 输出文件的路径
+</span>-<span class="ruby"><span class="constant">F</span> <span class="constant">FEATURE</span>, --feature=<span class="constant">FEATURE</span>         需要额外使用什么webkit功能。可选的也不多，也就javascript或者plugins
+</span>-<span class="ruby">w <span class="constant">SECONDS</span>, --wait=<span class="constant">SECONDS</span>            截图之前最多等待多长时间。这个也相当于设置一个超时机制。
+</span>-<span class="ruby">-encoded-url                         将后面传递的url参数当作url-encode过的来处理</span>
+</code></pre><p>使用本身很简单，接下来问题是。往往服务器操作系统是没有GUI的，直接在shell下运行webkit2png会遇到如下错误信息：</p>
+<pre><code>$ webkit2png -o out.png -F javascript <span class="string">http:</span><span class="comment">//www.baidu.com</span>
+<span class="string">webkit2png:</span> cannot connect to X <span class="string">server :</span><span class="number">99</span>
+</code></pre><p>为了解决这个问题，需要将之前直接的截图命令做一点改动：</p>
+<pre><code>$ xvfb-<span class="keyword">run</span> webkit2png -o <span class="keyword">out</span>.png -F javascript http:<span class="comment">//www.baidu.com</span>
+</code></pre><p>这时候就可以正常对网页截图了。但是很可能截出来的图清晰度不够，无法满足需求(这个不一定，我在Ubuntu下没有遇见这个问题，但是在CentOS上遇见了)。实际上<code>xvfb-run</code>这个命令是一个shell脚本，默认情况下，这个脚本位于<code>/usr/bin</code>。该脚本可以接收一个<code>--server-args</code>的选项。我们只需要添加该参数即可设置截图的分辨率：</p>
+<pre><code>$ xvfb-<span class="keyword">run</span> --server-<span class="keyword">args</span>=<span class="string">"-screen 0 640x480x16"</span> webkit2png -o <span class="keyword">out</span>.png -F javascript http:<span class="comment">//www.baidu.com</span>
+</code></pre><p>前面提到，<code>xvfb-run</code>是一个脚本。当我们不加<code>--server-args</code>的选项的时候，他是有默认值的，我们可以打开脚本看一下，我这里挑选出设置选项默认值的地方：</p>
+<pre><code><span class="variable">PROGNAME=</span>xvfb-run
+<span class="variable">SERVERNUM=</span><span class="number">99</span>
+<span class="variable">AUTHFILE=</span>
+<span class="variable">ERRORFILE=</span>/dev/<span class="constant">null</span>
+<span class="variable">STARTWAIT=</span><span class="number">3</span>
+<span class="variable">XVFBARGS=</span><span class="string">"-screen 0 640x480x8"</span>
+<span class="variable">LISTENTCP=</span><span class="string">"-nolisten tcp"</span>
+<span class="variable">XAUTHPROTO=</span>.
+</code></pre><p>这里的<code>XVFBARGS</code>实际上就是对应<code>--server-args</code>选项的默认值，将这里的默认值改成<code>-screen 0 640x480x16</code>，再截图基本图片清晰度就可以满足一般的截图需要了。另外，我们当时的需求是再一个Java Web项目中使用该工具进行截图。我们在测试的过程中发现，连续的截图请求中，后面的请求往往会失败，在错误日志中，我们看到下面的错误信息：</p>
+<pre><code><span class="string">webkit2png:</span> Fatal IO <span class="string">error:</span> client killed
+<span class="regexp">/usr/</span>bin/xvfb-<span class="string">run:</span> line <span class="number">171</span>: <span class="string">kill:</span> (<span class="number">2879</span>) - No such process
+</code></pre><p>实际上在<code>xvfb-run</code>脚本的第171行有一个kill当前Xvfb进程的过程：</p>
+<pre><code><span class="built_in">kill</span> <span class="variable">$XVFBPID</span>
+</code></pre><p>将这一行注释掉之后，连续的截图请求就能够正常处理了。至于为什么会这样，接下来我会研究一下之后，找时间专门写一篇文章介绍Xvfb以及这个脚本主要做什么。</p>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>最近需要做一个网页截图服务。经过一些调研之后，我们选定一了一个基于python的工具 <a href="https://github.com/AdamN/python-webkit2png/" target="_blank" rel="external">webkit2pn]]>
+    </summary>
+    
+      <category term="webkit2png" scheme="http://codingblogs.net/tags/webkit2png/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[Datetime API in Java 8]]></title>
+    <link href="http://codingblogs.net/2014/09/19/Datetime-API-in-Java-8/"/>
+    <id>http://codingblogs.net/2014/09/19/Datetime-API-in-Java-8/</id>
+    <published>2014-09-19T11:28:11.000Z</published>
+    <updated>2015-07-18T14:02:55.000Z</updated>
+    <content type="html"><![CDATA[<h1 id="1-Java时间API历史">1.Java时间API历史</h1><p>Java在1.0引入了<code>Date</code>类。从事后看来，这个类的设计当时是没有经过深思熟虑的。这个类中的很多方法在1.1版本的JDK中就被废弃了。</p>
+<p>Java在1.1引入了<code>Calendar</code>类。这个类实际上也没有得到好评：这个类的实例是可变的，并且这个类也没有处理<a href="http://zh.wikipedia.org/wiki/%E9%97%B0%E7%A7%92" target="_blank" rel="external">闰秒</a>的问题。</p>
+<p>Java在1.8引入了<code>java.time</code>API。这套API可以比较好的弥补以前的时间API中的一些缺陷。</p>
+<h1 id="2-时间线与Instant">2.时间线与Instant</h1><p>Java中引入<code>Instant</code>来代表时间轴上的一个点。时间原点<code>epoch</code>，是1970年本初子午线经过格林威治皇家观测台的时间。从这远点开始，每天的时间用86400秒来度量，精度为纳秒。</p>
+<p>可以使用Instant.now()来获取当前时间点，两个Instant之间可以使用Duration.between()来比较时间间隔。</p>
+<p>可以通过Instant.equals()和compareTo()方法来比较两个时间点得大小和相等性。</p>
+<pre><code>Instant <span class="operator"><span class="keyword">start</span> = Instant.<span class="keyword">now</span>();</span>
+runSomeAlorithm();
+Instant <span class="operator"><span class="keyword">end</span> = Instant.<span class="keyword">now</span>();</span>
+Duration timeElapsed = Duration.between(<span class="operator"><span class="keyword">start</span>, <span class="keyword">end</span>);</span>
+</code></pre><p>Instant类中有很多重载的加、减方法。Duration类中除了基本的加减方法，还有一些乘除方法，以及判断是否负数(<code>isNegative()</code>,<code>isZero()</code>)。详情参见API文档。</p>
+<h1 id="3-本地日期时间">3.本地日期时间</h1><p>Java中的人类方便阅读的日期时间有两类：本地日期时间和时区日期时间。本地日期时间只有日期和/或当天的时间信息，没有时区的信息，因此并不对应Instant。而时区时间则可以对应Instant。</p>
+<p>Java 8中使用<code>LocalDate</code>表示日期：</p>
+<pre><code>LocalDate today = LocalDate.now()<span class="comment">;</span>
+LocalDate birthDay = LocalDate.of(1989, 7, 16)<span class="comment">;</span>
+LocalDate dob = LocalDate.of(1989, Month.JULY, 16)<span class="comment">;</span>
+</code></pre><p>与<code>java.util.Date</code>不同的是，LocalDate中的月不是从0开始的。年份也不是从1900开始。LocalDate有一些常用的加、减方法。也可以获取某个LocalDate是一个月中的第几天，一年中的第几天等。具体详见API文档。</p>
+<h1 id="4-日期Adjusters">4.日期Adjusters</h1><p>有时候需要计算类似于“每个月的第一个星期二”这类的需求。使用<code>TemporalAdjusters</code>类可以提供一堆静态方法来做一些通用的调节。</p>
+<pre><code>LocalDate firstTuesday = LocalDate.<span class="keyword">of</span>(<span class="property">year</span>, <span class="property">month</span>, <span class="property">day</span>)
+    .<span class="keyword">with</span>(TemporalAdjusters.nextOrSame(DayOfWeek.TUESDAY));
+</code></pre><p>也可以通过实现TemporalAdjuster接口来实现自己的调整器：</p>
+<pre><code><span class="type">TemporalAdjuster</span> <span class="type">NEXT_WORKDAY</span> = w -&gt; {
+    <span class="type">LocalDate</span> <span class="literal">result</span> = (<span class="type">LocalDate</span>) w;
+    <span class="keyword">do</span> {
+        <span class="literal">result</span> = <span class="literal">result</span>.plusDays(<span class="number">1</span>);
+    }<span class="keyword">while</span> (<span class="literal">result</span>.getDayOfWeek().getValue() &gt;= <span class="number">6</span>);
+    <span class="keyword">return</span> <span class="literal">result</span>;
+};
+<span class="type">LocalDate</span> backToWork = today.<span class="keyword">with</span>(<span class="type">NEXT_WORKDAY</span>);
+</code></pre><h1 id="5-本地时间">5.本地时间</h1><p><code>LocalTime</code>表示一天中的时间。例如：15：00：00. LocalTime类也有now()和of()方法来构建实例。</p>
+<p>LocalTime rightNow = LocalTime.now();<br>LocalTime bedTime = LocalTime.of(22, 30);</p>
+<p>LocalTime有一系列的加减操作方法，判断两个时间哪个在前哪个在后的方法，变化指定时间的方法等，具体参见API文档。</p>
+<h1 id="6-时区时间">6.时区时间</h1><p>时区时间使用<code>ZonedDateTime</code>来表示。该类中有一系列的静态方法来创建时区时间：</p>
+<pre><code><span class="keyword">public</span> <span class="keyword">static</span> ZonedDateTime of(<span class="built_in">int</span> <span class="built_in">year</span>,
+                               <span class="built_in">int</span> <span class="built_in">month</span>,
+                               <span class="built_in">int</span> dayOfMonth,
+                               <span class="built_in">int</span> <span class="built_in">hour</span>,
+                               <span class="built_in">int</span> <span class="built_in">minute</span>,
+                               <span class="built_in">int</span> <span class="built_in">second</span>,
+                               <span class="built_in">int</span> nanoOfSecond,
+                               ZoneId zone)
+<span class="keyword">public</span> <span class="keyword">static</span> ZonedDateTime of(LocalDate date,
+                               LocalTime time,
+                               ZoneId zone)
+<span class="keyword">public</span> <span class="keyword">static</span> ZonedDateTime now(ZoneId zone)
+<span class="keyword">public</span> <span class="keyword">static</span> ZonedDateTime now()
+</code></pre><p>看一个例子：</p>
+<pre><code>ZonedDateTime time = ZonedDateTime.<span class="keyword">of</span>(<span class="number">1969</span>, <span class="number">7</span>, <span class="number">16</span>, <span class="number">9</span>, <span class="number">32</span>, <span class="number">0</span>, <span class="number">0</span>, ZoneId.<span class="keyword">of</span>(<span class="string">"America/New_York"</span>));
+<span class="comment">//1969-07-16T09:32-04:00[America/New_York]</span>
+</code></pre><p>时区时间的使用相对来说比较复杂，所以Java API的设计者建议开发者更多的使用本地日期时间。ZonedDateTime中的方法与前面提到的类大同小异。详见API文档。</p>
+<h1 id="7-格式化与解析">7.格式化与解析</h1><p><code>DateTimeFormatter</code>提供了三种formatter来打印日期时间值，例如：<br>BASIC_ISO_DATE 年月日，时区偏移量 19690716-0500这几种方式其实都不适合我们常用的yyyy-MM-dd的表示方法。</p>
+<p>如果要自定义日期时间格式，可以使用ofPattern方法：</p>
+<pre><code><span class="variable">DateTimeFormatter</span> formatter = <span class="variable">DateTimeFormatter</span>.<span class="keyword">of</span><span class="variable">Pattern</span>(<span class="string">"E yyyy-MM-dd HH:mm"</span>);
+</code></pre><p>其中，e表示day of week。其中e表示3，E表示Wed， EEEE表示Wednesday， EEEEE：W</p>
+<p>具体的这些模式元素参见API文档即可。</p>
+<h1 id="8-与老的日期时间API互操作：">8.与老的日期时间API互操作：</h1><pre><code><span class="tag">Instant</span>&lt;<span class="tag">-</span>&gt;<span class="tag">java</span><span class="class">.util</span><span class="class">.Date</span>
+<span class="tag">Date</span><span class="class">.from</span>(<span class="tag">instant</span>)
+<span class="tag">date</span><span class="class">.toInstant</span>()
+
+<span class="tag">ZonedDateTime</span>&lt;<span class="tag">-</span>&gt;<span class="tag">java</span><span class="class">.util</span><span class="class">.GregorianCalendar</span>
+<span class="tag">GregorianCalendar</span><span class="class">.from</span>(<span class="tag">zonedDateTime</span>)
+<span class="tag">cal</span><span class="class">.toZonedDateTime</span>()
+
+<span class="tag">Instant</span>&lt;<span class="tag">-</span>&gt;<span class="tag">java</span><span class="class">.sql</span><span class="class">.Timestamp</span>
+<span class="tag">Timestamp</span><span class="class">.from</span>(<span class="tag">instant</span>)
+<span class="tag">timestamp</span><span class="class">.toInstant</span>()
+
+<span class="tag">LocalDateTime</span>&lt;<span class="tag">-</span>&gt;<span class="tag">java</span><span class="class">.sql</span><span class="class">.Timestamp</span>
+<span class="tag">Timestamp</span><span class="class">.valueOf</span>(<span class="tag">localDateTime</span>)
+<span class="tag">timestamp</span><span class="class">.toLocalDateTime</span>()
+
+<span class="tag">LocalDate</span>&lt;<span class="tag">-</span>&gt;<span class="tag">java</span><span class="class">.sql</span><span class="class">.Date</span>
+<span class="tag">Date</span><span class="class">.valueOf</span>(<span class="tag">localDate</span>)
+<span class="tag">date</span><span class="class">.toLocalDate</span>();
+
+<span class="tag">Time</span><span class="class">.valueOf</span>(<span class="tag">localTime</span>)
+<span class="tag">time</span><span class="class">.toLocalTime</span>()
+
+<span class="tag">DateTimeFormatter</span>&lt;<span class="tag">-</span>&gt;<span class="tag">java</span><span class="class">.text</span><span class="class">.DateFormat</span>
+<span class="tag">format</span><span class="class">.toFormat</span>()
+<span class="tag">None</span>
+
+<span class="tag">java</span><span class="class">.util</span><span class="class">.TimeZone</span>&lt;<span class="tag">-</span>&gt;<span class="tag">ZoneId</span>
+<span class="tag">TimeZone</span><span class="class">.getTimeZone</span>(<span class="tag">id</span>)
+<span class="tag">timeZone</span><span class="class">.toZoneId</span>()
+
+<span class="tag">java</span><span class="class">.nio</span><span class="class">.file</span><span class="class">.attribute</span><span class="class">.FileTime</span>&lt;<span class="tag">-</span>&gt;<span class="tag">Instant</span>
+<span class="tag">FileTime</span><span class="class">.from</span>(<span class="tag">instant</span>)
+<span class="tag">fileTime</span><span class="class">.toInstant</span>()
+</code></pre>]]></content>
+    <summary type="html">
+    <![CDATA[<h1 id="1-Java时间API历史">1.Java时间API历史</h1><p>Java在1.0引入了<code>Date</code>类。从事后看来，这个类的设计当时是没有经过深思熟虑的。这个类中的很多方法在1.1版本的JDK中就被废弃了。</p>
+<p>Java在1.]]>
+    </summary>
+    
+      <category term="Datetime API" scheme="http://codingblogs.net/tags/Datetime-API/"/>
+    
+      <category term="Java 8" scheme="http://codingblogs.net/tags/Java-8/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[Stream API in Java 8]]></title>
+    <link href="http://codingblogs.net/2014/09/19/Stream-API-in-Java-8/"/>
+    <id>http://codingblogs.net/2014/09/19/Stream-API-in-Java-8/</id>
+    <published>2014-09-19T11:26:08.000Z</published>
+    <updated>2015-07-18T14:02:27.000Z</updated>
+    <content type="html"><![CDATA[<h1 id="1-什么是Stream">1.什么是Stream</h1><p>在Java 8之前，我们经常会写类似这样的代码：</p>
+<pre><code>List&lt;String&gt; wordList = ...
+int <span class="command">count</span> = <span class="number">0</span>;
+<span class="keyword">for</span>(String <span class="property">word</span> : wordList) {
+    <span class="keyword">if</span>(<span class="property">word</span>.<span class="property">length</span>() &gt; <span class="number">5</span>) {
+        System.out.println(<span class="property">word</span>)
+        <span class="command">count</span>++;
+    }
+}
+</code></pre><p>这段代码的功能很简单，对一个List集合中的元素进行迭代，对每一个元素(字符串)的长度进行判断，如果长度大于5，则将该元素打印到控制台输出，并且对计数器进行加一操作。这种风格的代码是在Java 8之前我们所习惯的风格。实际上也是典型的指令式编程风格的体现。在Java 8的集合框架中，为了更好的支持批量操作以及并行化，引入了Stream的概念。我们首先可以看一下上面这段代码的Java 8版本：</p>
+<pre><code><span class="type">List</span>&lt;<span class="type">String</span>&gt; wordList = ...
+<span class="built_in">int</span> count = wordList.stream<span class="literal">()</span>.filter(<span class="built_in">word</span> -&gt; <span class="built_in">word</span>.length<span class="literal">()</span> &gt; <span class="number">5</span>).count<span class="literal">()</span>;
+</code></pre><p>stream方法从集合对象中产生了一个<code>Stream对象</code>。filter方法产生了另外一个<code>Stream对象</code>，这个对象“含有”所有长度超过5的元素。最终count方法将这个Stream合并成一个最终结果。这里提到了Stream对象。从直觉上看，Stream实际上和Collection很像，我们可以提取出数据，做一些变换。但是二者有本质的区别。</p>
+<ul>
+<li>Stream对象本身并不存储元素。元素存储在底层集合对象中，或者根据需求生成。</li>
+<li>Stream操作并不改变源Stream，而是生成新的Steam</li>
+<li>Stream操作都是尽可能懒执行的。上面的filter操作是等到最终count操作的时候才最终执行。</li>
+</ul>
+<p>Stream操作除了顺序版本，还支持并行版本。上面的例子可以写成并行的版本。</p>
+<pre><code><span class="built_in">int</span> count = wordList.parallelStream<span class="literal">()</span>.filter(<span class="built_in">word</span> -&gt; <span class="built_in">word</span>.length<span class="literal">()</span> &gt; <span class="number">5</span>).count<span class="literal">()</span>;
+</code></pre><p>这样就可以采用集合框架的并行处理特性。</p>
+<p>实际上我们也可以看出，这是Java 8引入函数式编程风格的支持。Stream操作的风格是做什么，而不是怎么做。一般来说，使用Stream操作都会建立三个阶段的管道：</p>
+<ul>
+<li>创建Stream。</li>
+<li>通过中间操作将原始Stream变换成其他Stream。</li>
+<li>应用中间操作生成最终结果。</li>
+</ul>
+<h1 id="2-创建Stream">2.创建Stream</h1><p>实际上刚才我们已经看到了如何创建Stream。也就是调用集合对象的stream()或者parallelStream()方法即可。这两个方法实在Collection接口中实现的。对于数组来说，需要调用Stream接口的of(T… values)方法。</p>
+<pre><code><span class="keyword">Stream&lt;String&gt; </span><span class="keyword">stream </span>= <span class="keyword">Stream.of("I", </span><span class="string">"am"</span>, <span class="string">"wawlian"</span>)<span class="comment">;</span>
+</code></pre><p>此外，Arrays类提供了一个<code>stream(int[] array, int startInclusive, int endExclusive)</code>和一系列重载方法来指定数组中哪些元素来创建Stream。</p>
+<p>可以使用Stream.empty()方法创建一个空的Stream。</p>
+<p>可以使用Stream的generate()方法来创建无限的Stream。首先看一下该方法的原型：</p>
+<pre><code>static <span class="tag">&lt;<span class="title">T</span>&gt;</span> Stream<span class="tag">&lt;<span class="title">T</span>&gt;</span> generate(Supplier<span class="tag">&lt;<span class="title">T</span>&gt;</span> s)
+</code></pre><p>Supplier接口不出意外肯定也是一个函数接口。那么这个函数接口的abstract方法定义如下：</p>
+<pre><code>T <span class="function"><span class="title">get</span><span class="params">()</span></span>
+</code></pre><p>那么很明显，我们在generate方法中只需要提供一个() -&gt; {}模式的lambda表达式或者是一个无参数且无返回值的函数引用即可。下面看两个例子：</p>
+<pre><code>Stream.generate<span class="function"><span class="params">(() -&gt; {<span class="string">"Hello"</span>})</span>;
+<span class="title">Stream</span>.<span class="title">generate</span><span class="params">(Math::random())</span>;</span>
+</code></pre><p>Stream中还有一个iterate方法，其定义如下：</p>
+<pre><code>static &lt;<span class="literal">T</span>&gt; Stream&lt;<span class="literal">T</span>&gt; iterate(<span class="literal">T</span> seed, UnaryOperator&lt;<span class="literal">T</span>&gt; f);
+</code></pre><p>这个函数会使用seed作为种子创建一个无限的序列seed, f(seed), f(f(seed))…</p>
+<p>UnaryOperator接口本身并没有abstract方法，但是该接口继承自Function接口，有一个apply方法如下：</p>
+<pre><code>R apply<span class="list">(<span class="keyword">T</span> <span class="literal">t</span>)</span><span class="comment">;</span>
+</code></pre><p>这个方法接收一个参数，返回相应的值。这样，我们就可以创建一个1，2，3…这种的无限序列了。</p>
+<pre><code>Stream&lt;Long&gt; stream = Stream.iterate(<span class="number">1</span>, <span class="function"><span class="params">(long x)</span> -&gt;</span> {<span class="keyword">return</span> x + <span class="number">1</span>});
+</code></pre><h1 id="3-中间操作">3.中间操作</h1><ul>
+<li>filter方法</li>
+</ul>
+<p>filter方法从字面看就是起到过滤作用，返回的是另一个Stream对象。filter方法的原型如下：</p>
+<pre><code>Stream&lt;T&gt; <span class="function"><span class="title">filter</span><span class="params">(Predicate&lt;? super T&gt; predicate)</span></span>
+</code></pre><p>其中，我们在上一篇文章中其实已经遇到过Predicate接口。这个接口实际上表现的是一种判定的规则。其中有一个test方法：</p>
+<pre><code>boolean test<span class="list">(<span class="keyword">T</span> <span class="literal">t</span>)</span>
+</code></pre><p>所以，filter方法的参数可以是一个形如(T t)-&gt;{if() return true; else return false}之类的Lambda表达式。</p>
+<ul>
+<li>map方法</li>
+</ul>
+<p>map方法实际上是对集合中的所有元素执行某些变换操作，并生成新的Stream方法。方法原型如下：</p>
+<pre><code>&lt;R&gt; <span class="keyword">Stream&lt;R&gt; </span><span class="preprocessor">map</span>(<span class="preprocessor">Function</span>&lt;? super T,? extends R&gt; mapper)
+</code></pre><p>其中Function接口中有一个abstract方法apply:</p>
+<pre><code>R apply<span class="list">(<span class="keyword">T</span> <span class="literal">t</span>)</span><span class="comment">;</span>
+</code></pre><p>我们看一个将字符串转成大写字母的例子：</p>
+<pre><code><span class="built_in">List</span><span class="subst">&lt;</span><span class="built_in">String</span><span class="subst">&gt;</span> wordList <span class="subst">=</span> <span class="attribute">...</span>
+Stream<span class="subst">&lt;</span><span class="built_in">String</span><span class="subst">&gt;</span> stream <span class="subst">=</span> wordList<span class="built_in">.</span>stream()<span class="built_in">.</span><span class="built_in">map</span>(<span class="built_in">String</span><span class="tag">::toUpperCase</span>);
+</code></pre><p>再看一个取出每个字符串第一个字符的例子：</p>
+<pre><code><span class="built_in">List</span><span class="subst">&lt;</span><span class="built_in">String</span><span class="subst">&gt;</span> wordList <span class="subst">=</span> <span class="attribute">...</span>
+Stream<span class="subst">&lt;</span>Character<span class="subst">&gt;</span> stream <span class="subst">=</span> wordList<span class="built_in">.</span>stream()<span class="built_in">.</span><span class="built_in">map</span>((<span class="built_in">String</span> s) <span class="subst">-&gt; </span>{s<span class="built_in">.</span>chatAt(<span class="number">0</span>)});
+</code></pre><ul>
+<li>截取子Stream</li>
+</ul>
+<p>可以通过Stream<t> limit(long maxSize)方法来从源Stream中截取包含前maxSize元素的Stream。如果源Stream元素数量本身就不足maxSize，就返回源Stream中元素组成的Stream。看例子：</t></p>
+<pre><code>Stream.generate(<span class="attribute">Math</span>::random()).limit(<span class="number">5</span>);
+Stream.iterate<span class="function"><span class="params">(<span class="number">1</span>, (long x) -&gt; {<span class="keyword">return</span> x + <span class="number">1</span>})</span>.<span class="title">limit</span><span class="params">(<span class="number">5</span>)</span>;</span>
+</code></pre><p>第一行代码返回一个包含五个随机数的Stream，后一个例子返回返回类似[1,2,3,4,5]的Stream。</p>
+<p>而方法Stream<t> skip(long n)的行为却刚好和limit相反，他是从源Stream中忽略前n个元素。</t></p>
+<ul>
+<li>拼接Stream操作。</li>
+</ul>
+<p>可以通过concat方法拼接两个Stream。其方法原型如下：</p>
+<pre><code>static <span class="tag">&lt;<span class="title">T</span>&gt;</span> Stream<span class="tag">&lt;<span class="title">T</span>&gt;</span> concat(Stream<span class="php"><span class="preprocessor">&lt;?</span> extends T&gt; a,
+                            Stream<span class="preprocessor">&lt;?</span> extends T&gt; b)</span>
+</code></pre><p>非常简单，这个就不举例子了。</p>
+<ul>
+<li>有状态的中间操作。</li>
+</ul>
+<p>之前提到的中间变换操作都有一个特点，生成新的Stream都不以来源Stream的状态。但是有一些变换操作，实际上是需要根据源Stream的状态来进行的。比如，distinct方法。我们可以从字面上得知，该方法的行为类似于SQL中的关键词distinct。这个方法的实现明显就需要记录源Stream的状态。除此之外，还有一系列的Stream<t> sorted()方法，可以将源Stream变成排好序的新Stream。举个例子：</t></p>
+<pre><code><span class="built_in">List</span><span class="subst">&lt;</span><span class="built_in">String</span><span class="subst">&gt;</span> wordList <span class="subst">=</span> <span class="attribute">...</span>
+wordList<span class="built_in">.</span>stream()<span class="built_in">.</span>sorted(<span class="built_in">String</span><span class="tag">::length</span>);    
+</code></pre><p>这个例子实际上就是通过比较字符串长度来排序。这个排序与Collections.sort是有区别的，后者是in-place排序。</p>
+<h1 id="4-一些简单的归纳，合并操作">4.一些简单的归纳，合并操作</h1><p>我们创建Stream也好，进行中间的变换操作也好，都是为了最终获取到结果做铺垫。我们最关注的还是最终的结果。那么这一部分讲到的方法叫做Reduce，也就是我们前面讲到的终端操作。</p>
+<p>前面提到的count方法就是一个简单的终端操作。获取Stream中满足数量的元素个数。除此之外，还有max和min方法也是终端操作。我们看一下这两个方法的方法原型：</p>
+<pre><code>Optional<span class="variable">&lt;T&gt;</span> <span class="keyword">max</span>(Comparator<span class="variable">&lt;? super T&gt;</span> comparator);
+Optional<span class="variable">&lt;T&gt;</span> <span class="keyword">min</span>(Comparator<span class="variable">&lt;? super T&gt;</span> comparator);
+</code></pre><p>参数部分我们不再赘述。这里的返回值Optional是一个之前没遇到的内容。Optional是一个类。这个是一个容器对象，可能包含一个非null值，也可能不包含非null。我们知道，如果一个Stream是空的，对其进行max操作肯定得到的结果也是空的。毕竟，巧妇难为无米之炊嘛。那么我们以往的代码可能是这样：</p>
+<pre><code><span class="keyword">if</span>(ret == <span class="literal">null</span>) {
+    <span class="comment">//balabala</span>
+}<span class="keyword">else</span> ｛
+    <span class="comment">//别的balaba</span>
+}
+</code></pre><p>否则，很容易导致NullPointerException，这可能是Java中最烦人的一个异常。使用Optional之后，可以通过下面的代码来获取结果：</p>
+<pre><code><span class="built_in">List</span><span class="subst">&lt;</span><span class="built_in">String</span><span class="subst">&gt;</span> wordList <span class="subst">=</span> <span class="literal">new</span> ArrayList<span class="subst">&lt;&gt;</span>();
+Optional<span class="subst">&lt;</span><span class="built_in">String</span><span class="subst">&gt;</span> maybeMax <span class="subst">=</span> wordList<span class="built_in">.</span>stream()<span class="built_in">.</span><span class="keyword">max</span>(<span class="built_in">String</span><span class="tag">::length</span>) 
+maybeMax<span class="built_in">.</span>isPresent(System<span class="built_in">.</span>out<span class="tag">::println</span>)
+</code></pre><p>Optional类的isPresent()方法接收一个Consumer函数接口作为参数。这个接口我们在前面其实已经提到过。这个接口有一个抽象方法：</p>
+<pre><code>void accept<span class="list">(<span class="keyword">T</span> <span class="literal">t</span>)</span>
+</code></pre><p>通过这样的方式，将以前指令式的判断非null的代码编程函数式的编码风格。除此之外，当Optional中不含非null对象时，也可以做一些其他的操作。在Optional中有一个orElse方法。原形如下：</p>
+<pre><code>public T <span class="function"><span class="title">orElse</span><span class="params">(T other)</span></span>
+</code></pre><p>这个方法是当Optional中的值为null，返回一个别的值other。这个方法可以用来提供默认值。类似于Lua代码中的：</p>
+<pre><code><span class="keyword">local</span> x = y <span class="keyword">or</span> <span class="number">1</span>
+</code></pre><p>除此之外，Optional类还有一个高级版的orElseGet方法。这个方法接收一个函数接口Supplier。该函数接口有一个抽象方法：</p>
+<pre><code>T <span class="function"><span class="title">get</span><span class="params">()</span></span>；
+</code></pre><p>这个方法中我们就可以提供当值不存在时给默认值的逻辑。例如：</p>
+<pre><code>optional.<span class="function"><span class="title">orElseGet</span><span class="params">(Math::random)</span></span>
+</code></pre><p>这个例子就会在optional不包含值的时候生成一个随机数作为默认值。</p>
+<p>Stream接口中有一个findFirst()方法，要么返回要么包含第一个元素要么为空的Optional。我们看个例子：</p>
+<pre><code>Optional&lt;String&gt; firstOptional = wordList.stream<span class="params">()</span>.filter<span class="params">(s -&gt; s.startsWith<span class="params">(<span class="string">"Q"</span>)</span>)</span>.findFirst<span class="params">()</span>;
+</code></pre><p>这个例子返回的是第一个以字母Q开始的字符串。当然有可能就不存在这样一个字符串。</p>
+<p>Stream中还有一个Optional<t> findAny()，这个方法随意的从Steam取一个元素。不见得是哪个，结果也不可再现。这个操作是一个短路操作。此外，还有一组判断性的终端操作：</t></p>
+<pre><code>boolean <span class="function"><span class="title">allMatch</span><span class="params">(Predicate&lt;? super T&gt; predicate)</span></span>
+boolean <span class="function"><span class="title">noneMatch</span><span class="params">(Predicate&lt;? super T&gt; predicate)</span></span>
+boolean <span class="function"><span class="title">anyMatch</span><span class="params">(Predicate&lt;? super T&gt; predicate)</span></span>
+</code></pre><p>这些操作根据指定的规则来分别判定一个Stream中的元素是否都匹配规则、都不匹配规则、有匹配规则的。</p>
+<h1 id="5-reduce操作">5.reduce操作</h1><p>这里说的reduce操作也是终端操作。在Stream中提供了一系列重载的reduce方法。reduce方法允许我们用自己的方式去计算元素和或者将一个Stream对象中的元素以某种规律或者映射关联起来。</p>
+<pre><code>T reduce(T identity, BinaryOperator<span class="tag">&lt;<span class="title">T</span>&gt;</span> accumulator)
+Optional<span class="tag">&lt;<span class="title">T</span>&gt;</span> reduce(BinaryOperator<span class="tag">&lt;<span class="title">T</span>&gt;</span> accumulator)
+<span class="tag">&lt;<span class="title">U</span>&gt;</span> U reduce(U identity, BiFunction<span class="tag">&lt;<span class="title">U,?</span> <span class="attribute">super</span> <span class="attribute">T</span>,<span class="attribute">U</span>&gt;</span> accumulator, BinaryOperator<span class="tag">&lt;<span class="title">U</span>&gt;</span> combiner);
+</code></pre><p>在这里出现了几个陌生的函数式接口BinaryOperator, BiFunction。在BinaryOperator接口中，本身没有抽象方法，进一步查看文档，发现，实际上BinaryOperator接口继承自BiFunction接口。后者有一个抽象方法apply方法如下：</p>
+<pre><code>R apply<span class="list">(<span class="keyword">T</span> <span class="literal">t</span>, U u)</span>
+</code></pre><p>而对于BinaryOperator接口来说，只不过是T、U、R是同一种类型的特例而已。那么对于第一个reduce函数来说。其行为等价于下面的代码：</p>
+<pre><code>T <span class="literal">result</span> = identity;
+<span class="keyword">for</span> (T element : this stream)
+    <span class="literal">result</span> = accumulator.apply(<span class="literal">result</span>, element)
+<span class="keyword">return</span> <span class="literal">result</span>;
+</code></pre><p>实际上，对于sum、max、min甚至是字符串的拼接操作来说，都是这样的一种reduction操作。我们以sum为例：</p>
+<pre><code><span class="built_in">Integer</span> <span class="keyword">sum</span> <span class="subst">=</span> integers<span class="built_in">.</span>reduce(<span class="number">0</span>, (a, b) <span class="subst">-&gt; </span>a<span class="subst">+</span>b);
+<span class="built_in">Integer</span> <span class="keyword">sum</span> <span class="subst">=</span> integers<span class="built_in">.</span>reduce(<span class="number">0</span>, <span class="built_in">Integer</span><span class="tag">::sum</span>);
+</code></pre><p>而对于第二个reduce的重载来说，他的行为实际上等价于下面的代码：</p>
+<pre><code>boolean foundAny = <span class="literal">false</span>;
+T <span class="literal">result</span> = null;
+<span class="keyword">for</span> (T element : this stream) {
+<span class="keyword">if</span> (!foundAny) {
+    foundAny = <span class="literal">true</span>;
+    <span class="literal">result</span> = element;
+}<span class="keyword">else</span>
+    <span class="literal">result</span> = accumulator.apply(<span class="literal">result</span>, element);
+}
+<span class="keyword">return</span> foundAny ? <span class="type">Optional</span>.<span class="keyword">of</span>(<span class="literal">result</span>) : <span class="type">Optional</span>.empty();
+</code></pre><p>这个函数实际上是以集合中的第一个元素作为上一个reduce方法的第一个参数的版本。返回值方面，这个函数返回的是一个Optional类。这是因为，原始的Stream中可能根本就没有任何元素，那么返回就不像第一个方法那么确定了。</p>
+<p>在开始说第三个reduce方法之前，我们观察一下，前两个reduce函数中，适用于参数和返回值都是同一种类型的情况。那么现在有这样的一种情况，我们需要从一个Stream<string>类型中，计算所有字符串元素的length()的总数。这种情况下，输入是String但是返回是Integer。这种情况下是没办法套用前两个reduce方法的。这时候就用到了第三种方式的reduce方法。这种情况下的代码如下：</string></p>
+<pre><code>wordList.stream<span class="function"><span class="params">()</span>.<span class="title">reduce</span><span class="params">(<span class="number">0</span>, (total, str) -&gt; total + str.length(), (total1 + total2) -&gt; total1 + total2)</span>;</span>
+</code></pre><p>也就是说，accumulator主要负责accumulator.apply(result, element)，这个result初始值为identity。combinator用于合并中间结果。</p>
+<p>上面提到的reduce方法的函数接口类型的参数具有比较多的限制。例如对于accumulator必须满足：</p>
+<blockquote>
+<p>accumulator - an associative, non-interfering, stateless function for combining two values</p>
+</blockquote>
+<p>比如说对于associative，实际上就是满足结合律的要求。</p>
+<pre><code>(<span class="tag">a</span> op b) op c == <span class="tag">a</span> op (<span class="tag">b</span> op c)
+</code></pre><p>对于其他几条，可以参阅<a href="http://docs.oracle.com/javase/8/docs/api/java/util/stream/package-summary.html" target="_blank" rel="external">Package java.util.stream</a></p>
+<h1 id="6-收集Stream中的结果">6.收集Stream中的结果</h1><p>很多时候，我们对Stream进行了一系列的操作之后，并不见得希望将这些元素合并成一个最终结果，相反，可能只希望拿到变换之后的Stream中的元素而已。可以通过调用iterator()方法返回一个老式的迭代器。或者通过toArray方法来获取一个数组。</p>
+<pre><code>wordList.<span class="function"><span class="title">stream</span><span class="params">()</span></span>.<span class="function"><span class="title">toArray</span><span class="params">(String[]::new)</span></span>
+</code></pre><p>除了上文中提到的reduce函数之外，Stream还提供了另一种可变reduction操作。Stream中提供了下面这个方法：</p>
+<pre><code>&lt;<span class="keyword">R</span>&gt; <span class="keyword">R</span> collect(Supplier&lt;<span class="keyword">R</span>&gt; supplier, BiConsumer&lt;<span class="keyword">R</span>, ? super T&gt; accumulator, BiConsumer&lt;<span class="keyword">R</span>, <span class="keyword">R</span>&gt; combiner);
+</code></pre><p>这个方法主要由三个元素组成：</p>
+<ul>
+<li>supplier：用来创建目标对象的实例。</li>
+<li>accumulator：往目标对象中添加一个元素。</li>
+<li>combinator: 将两个目标对象合并成一个目标对象。</li>
+</ul>
+<p>加入我们需要将Stream中的元素统一收集到一个HashSet中。我们可以这么处理：</p>
+<pre><code>HashSet&lt;String&gt; retSet = stream.collect(HashSet::<span class="keyword">new</span>, HashSet::add, HashSet::addAll)
+</code></pre><p>这个方法本身非常复杂，一般来说我们很少用得上。Stream中提供了一个重载的collect方法，接收一个Collector接口作为参数。</p>
+<pre><code>&lt;R,A&gt; R <span class="function"><span class="title">collect</span><span class="params">(Collector&lt;? super T,A,R&gt; collector)</span></span>
+</code></pre><p>Collector是由四部分共同协作来将每一个entry累加到一个可变的容器中，并且可以对结果做一次最终的变换。这四部分：</p>
+<ul>
+<li>创建结果容器 (supplier()) </li>
+<li>将一个新的数据元素吸收到结果容器中。(accumulator()) </li>
+<li>将两个结果容器合并成一个。 (combiner()) </li>
+<li>对结果容器执行可选的最终变换。(finisher()) </li>
+</ul>
+<p>很容易猜到，实际上这几个方法都是Collector接口的方法。此外，Collector接口还提供了将一组函数接口转换成Collector接口的default方法。Java 8还提供了一个Collectors类。同Arrays和Collections一样，这个类实际上也是一个工具类，其中包含了若干工厂方法，可以生成一些常见的Collector。</p>
+<p>如果要将Stream中的元素收集到list或者set中，可以这样:</p>
+<pre><code><span class="built_in">List</span>&lt;<span class="built_in">String</span>&gt; retList = stream.collect(Collectors.toList());
+<span class="built_in">Set</span>&lt;<span class="built_in">String</span>&gt; retSet = stream.collect(Collectors.toSet());
+</code></pre><p>如果需要控制返回结合类型的具体实现类，还可以这样处理：</p>
+<pre><code>TreeSet&lt;String&gt; retSet = stream.collect(Collectors.toSet(TreeSet::<span class="keyword">new</span>));
+</code></pre><p>如果可以想将Stream中的String元素拼接起来返回，可以使用Collectors.joining()方法：</p>
+<pre><code>String ret = stream.collect<span class="params">(Collectors.joining<span class="params">()</span>)</span>;
+String ret = stream.collect<span class="params">(Collectors.joining<span class="params">(<span class="string">","</span>)</span>)</span>;
+</code></pre><p>如果元素是对象类型，我们还可以在之前做一些map操作：</p>
+<pre><code><span class="built_in">String</span> ret <span class="subst">=</span> stream<span class="built_in">.</span><span class="built_in">map</span>(Object<span class="tag">::toString</span>)<span class="built_in">.</span>collect(Collectors<span class="built_in">.</span>joining());
+</code></pre><p>如果需要将Stream归并成max、min、average之类的值，可以使用summarizingInt、summarizingLong、summarizingDouble方法，并且返回对应的IntSummaryStatistics、LongSummaryStatistics、DoubleSummaryStatistics：</p>
+<pre><code>IntSummaryStatistics summary = stream.collect<span class="params">(Collectors.summarizingInt<span class="params">(String::length)</span>)</span>;
+double avg = summary.getAverage<span class="params">()</span>;
+double <span class="built_in">max</span> = summary.getMax<span class="params">()</span>;
+</code></pre><h1 id="7-收集Stream中的元素到Map">7.收集Stream中的元素到Map</h1><p>假设有Stream<student>对象，现在需要将元素收集到一个Map，以id为key，值为学生的GPA。Collectors提供了toMap方法。该方法接收两个参数；</student></p>
+<pre><code>public <span class="literal">static</span> &lt;T,K,U&gt; Collector&lt;T,?,<span class="built_in">Map</span>&lt;K,U&gt;&gt; toMap(<span class="built_in">Function</span>&lt;? <span class="keyword">super</span> T,? <span class="keyword">extends</span> K&gt; keyMapper,
+                                                    <span class="built_in">Function</span>&lt;? <span class="keyword">super</span> T,? <span class="keyword">extends</span> U&gt; valueMapper)
+</code></pre><p>我们可以这样处理：</p>
+<pre><code><span class="tag">Map</span>&lt;<span class="tag">Integer</span>, <span class="tag">Double</span>&gt; <span class="tag">studentToGPA</span>
+         <span class="tag">students</span><span class="class">.stream</span>()<span class="class">.collect</span>(<span class="tag">Collectors</span><span class="class">.toMap</span>(<span class="rule"><span class="attribute">Student</span>:<span class="value">:getId, student -&gt; <span class="function">computeGPA</span>(student)))</span></span>;
+</code></pre><p>如果我们需要Map的值为元素本身，可以给第二个函数传递静态默认方法Function.identity()即可。</p>
+<pre><code><span class="tag">Map</span>&lt;<span class="tag">Integer</span>, <span class="tag">Student</span>&gt; <span class="tag">studentToGPA</span>
+             <span class="tag">students</span><span class="class">.stream</span>()<span class="class">.collect</span>(<span class="tag">Collectors</span><span class="class">.toMap</span>(<span class="rule"><span class="attribute">Student</span>:<span class="value">:getId, Function.<span class="function">identity</span>())</span></span>;
+</code></pre><p>如果一个key有多个值，那么collector会抛出IllegalStateException。我们还可以再提供一个函数来定义这种情况下如何处理：</p>
+<pre><code>Stream<span class="subst">&lt;</span><span class="built_in">Locale</span><span class="subst">&gt;</span> locales <span class="subst">=</span> Stream<span class="built_in">.</span>of(<span class="built_in">Locale</span><span class="built_in">.</span>getAvailableLocales());
+<span class="built_in">Map</span><span class="subst">&lt;</span><span class="built_in">String</span>, <span class="built_in">String</span><span class="subst">&gt;</span> languageNames <span class="subst">=</span> locales<span class="built_in">.</span>collect(Collectors<span class="built_in">.</span>toMap(
+    l <span class="subst">-&gt; </span>l<span class="built_in">.</span>getDisplayLanguage(),
+    l <span class="subst">-&gt; </span>l<span class="built_in">.</span>getDisplayCountry(l),
+    (existValue, newValue) <span class="subst">-&gt; </span>existValue
+));
+</code></pre><p>在这个例子中，由于比如说英语可能出现在美国、英国，所以会出现冲突的情况，由于我们提供了第三个函数，该函数的行为是保留已有的值。那么对于英语来说，只可能出现一次。</p>
+<p>接着这个例子，假设我们想知道对于所有国家来说，使用的语言有哪些。我们可以这样处理：</p>
+<pre><code>Stream<span class="subst">&lt;</span><span class="built_in">Locale</span><span class="subst">&gt;</span> locales <span class="subst">=</span> Stream<span class="built_in">.</span>of(<span class="built_in">Locale</span><span class="built_in">.</span>getAvailableLocales());
+<span class="built_in">Map</span><span class="subst">&lt;</span><span class="built_in">String</span>, <span class="built_in">Set</span><span class="subst">&lt;</span><span class="built_in">String</span><span class="subst">&gt;&gt;</span> countryLanguages <span class="subst">=</span> locales<span class="built_in">.</span>collect(Collectors<span class="built_in">.</span>toMap(
+    l <span class="subst">-&gt; </span>l<span class="built_in">.</span>getDisplayCountry(l),
+    l <span class="subst">-&gt; </span>Collections<span class="built_in">.</span>singleton(l<span class="built_in">.</span>getDisplayLanguage())
+    (a, b) <span class="subst">-&gt; </span>{
+        <span class="built_in">Set</span><span class="subst">&lt;</span><span class="built_in">String</span><span class="subst">&gt;</span> r <span class="subst">=</span> <span class="literal">new</span> HashSet<span class="subst">&lt;&gt;</span>(a);
+        r<span class="built_in">.</span>addAll(b);
+        <span class="keyword">return</span> r;
+    }
+);
+</code></pre><p>当然，在toMap的时候，也是可以给collect方法传递第二个参数来控制返回的具体类型的。</p>
+<h1 id="8-分组和分区(Group和Partition)">8.分组和分区(Group和Partition)</h1><p>上面那个对于所有国家来说，获取使用的语言有哪些的例子实际上是一个很冗长的处理。这种场景实际上非常类似SQL里面的group by语法。Collectors对此也做了抽象，定义了方法groupingBy:</p>
+<pre><code>public static &lt;T,<span class="keyword">K</span>&gt; Collector&lt;T,?,<span class="keyword">Map</span>&lt;<span class="keyword">K</span>,<span class="keyword">List</span>&lt;T&gt;&gt;&gt; groupingBy(<span class="keyword">Function</span>&lt;? super T,? extends <span class="keyword">K</span>&gt; classifier)
+public static &lt;T,<span class="keyword">K</span>,A,<span class="keyword">D</span>&gt; Collector&lt;T,?,<span class="keyword">Map</span>&lt;<span class="keyword">K</span>,<span class="keyword">D</span>&gt;&gt; groupingBy(<span class="keyword">Function</span>&lt;? super T,? extends <span class="keyword">K</span>&gt; classifier,
+                                                       Collector&lt;? super T,A,<span class="keyword">D</span>&gt; downstream)
+public static &lt;T,<span class="keyword">K</span>,<span class="keyword">D</span>,A,M extends <span class="keyword">Map</span>&lt;<span class="keyword">K</span>,<span class="keyword">D</span>&gt;&gt; Collector&lt;T,?,M&gt; groupingBy(<span class="keyword">Function</span>&lt;? super T,? extends <span class="keyword">K</span>&gt; classifier,
+                                                                       Supplier&lt;M&gt; mapFactory,
+                                                                       Collector&lt;? super T,A,<span class="keyword">D</span>&gt; downstream)
+</code></pre><p>这个方法有三个构成因子：</p>
+<ul>
+<li>classifier：表示分类依据。</li>
+<li>mapFactory：生成指定类型空Map的工厂。</li>
+<li>downstream：一个实现了下游归并操作的Collector。</li>
+</ul>
+<p>一头雾水，对吧。看例子吧。对于上面提到的那个场景，可以使用第一个groupingBy方法：</p>
+<pre><code><span class="built_in">Map</span><span class="subst">&lt;</span><span class="built_in">String</span>, <span class="built_in">List</span><span class="subst">&lt;</span>Locales<span class="subst">&gt;&gt;</span> countryLocales <span class="subst">=</span> locales<span class="built_in">.</span>collect(
+    Collectors<span class="built_in">.</span>groupingBy(<span class="built_in">Locale</span><span class="tag">::getDisplayCountry</span>));
+</code></pre><p>这里的方法引用Locale::getDisplayCountry就是classifier。如果提供的classifier是一个Predicate类型的函数，方法从groupingBy变成partitioningBy，那么Stream中的元素就被分成两个List。</p>
+<pre><code><span class="built_in">Map</span><span class="subst">&lt;</span><span class="built_in">Boolean</span>, <span class="built_in">List</span><span class="subst">&lt;</span>Locales<span class="subst">&gt;&gt;</span> englishAndOtherLocales <span class="subst">=</span> locales<span class="built_in">.</span>collect(Collectors<span class="built_in">.</span>partitioningBy(
+    l <span class="subst">-&gt; </span>l<span class="built_in">.</span>getLanguage()<span class="built_in">.</span><span class="keyword">equals</span>(<span class="string">"en"</span>)
+));
+<span class="built_in">List</span><span class="subst">&lt;</span>Locales<span class="subst">&gt;</span> englishLocales <span class="subst">=</span> englishAndOtherLocales<span class="built_in">.</span>get(<span class="literal">true</span>);
+</code></pre><p>groupingBy返回的是值为List的Map，如果需要对这些List做一些其他操作，还可以在调用groupingBy的时候提供另一个Collector，也就是第二个参数downstream。例如，我们需要将List转成Set：</p>
+<pre><code><span class="built_in">Map</span><span class="subst">&lt;</span><span class="built_in">String</span>, <span class="built_in">Set</span><span class="subst">&lt;</span><span class="built_in">Locale</span><span class="subst">&gt;&gt;</span> countryLocales <span class="subst">=</span> locales<span class="built_in">.</span>collect(
+    Collectors<span class="built_in">.</span>groupingBy(<span class="built_in">Locale</span><span class="tag">::getCountry</span>, Collectors<span class="built_in">.</span>toSet())
+);
+</code></pre><p>downstream还可以是其他很多种类的Collector，我们举几个例子看一下：</p>
+<ul>
+<li>counting</li>
+</ul>
+<p>计算元素数量</p>
+<pre><code><span class="built_in">Map</span><span class="subst">&lt;</span><span class="built_in">String</span>, Long<span class="subst">&gt;</span> countryLocaleCount <span class="subst">=</span> locales<span class="built_in">.</span>collect(
+    Collectors<span class="built_in">.</span>groupingBy(<span class="built_in">Locale</span><span class="tag">::getCountry</span>, Collectors<span class="built_in">.</span>counting())
+);
+</code></pre><p>这个例子计算每个国家使用的语言种类。</p>
+<ul>
+<li>summingInt summingLong summingDouble</li>
+</ul>
+<p>接收函数作为参数，应用于每一个元素，返回相应的数值类型，并且计算总和</p>
+<pre><code>Map<span class="variable">&lt;String, Integer&gt;</span> <span class="keyword">state</span>Population = cities.collect(
+    Collectors.groupingBy(City::getState, summingInt(City::getPopulation))
+);
+</code></pre><p>这个例子计算每个州人口总数。</p>
+<ul>
+<li>maxBy minBy</li>
+</ul>
+<p>接收Comparator然后找出最大的、最小的。</p>
+<pre><code><span class="built_in">Map</span><span class="subst">&lt;</span><span class="built_in">String</span>, City<span class="subst">&gt;</span> maxPopulationCity <span class="subst">=</span> cities<span class="built_in">.</span>collect(
+        Collectors<span class="built_in">.</span>groupingBy(City<span class="tag">::getState</span>, maxBy(Comparator<span class="built_in">.</span>comparing(City<span class="tag">::getPopulation</span>)))
+);
+</code></pre><p>这个例子找出每个州里面人数最大的城市。</p>
+<h1 id="9-_原是类型Stream">9. 原是类型Stream</h1><p>我们之前针对原始数据类型使用的都是类似于Stream<integer>的形式，实际上Java 8为原是类型提供了几个专门的类。IntStream、LongStream和DoubleStream。对于boolean、byte、char、short类型，Java 8没有专门提供，可以使用IntStream。而对于float类型，则可以使用DoubleStream。</integer></p>
+<p>大部分我们之前使用的Stream的方法都可以照常使用，这些Stream根据数据类型的特点还提供了一些特有的方法。此外也已将其他的一些Stream通过mapToInt之类的方法变换成IntStream。</p>
+<pre><code>Stream<span class="subst">&lt;</span><span class="built_in">String</span><span class="subst">&gt;</span> words <span class="subst">=</span> <span class="attribute">...</span>;
+IntStream lengths <span class="subst">=</span> words<span class="built_in">.</span>mapTpInt(<span class="built_in">String</span><span class="tag">::length</span>);
+</code></pre><h1 id="10-并行Stream">10.并行Stream</h1><p>Stream的引入可以使针对集合的批量操作并行化变得简单。默认情况下Stream操作生成的都是顺序Stream，我们可以使用Collection接口中的parallelStream()方法来获取并行的Stream。只要是并行Stream，当终端操作执行，前面那些懒执行的中间操旧就会并行进行。但是有一点需要注意的是，这些中间操做是无状态的，执行顺序可以是任意的。</p>
+<p>此外，我们需要保证传递给并行Stream的函数中的逻辑是线程安全的。</p>
+<pre><code><span class="type">Stream</span>&lt;<span class="type">String</span>&gt; words = ...
+<span class="built_in">int</span><span class="literal">[]</span> shortWords = <span class="keyword">new</span> <span class="built_in">int</span>[<span class="number">12</span>];
+words.parallel<span class="literal">()</span>.forEach(s -&gt; {<span class="keyword">if</span>(s.length<span class="literal">()</span> &lt; <span class="number">12</span>) shortWords[s.length<span class="literal">()</span>]++;});
+</code></pre><p>这段代码就是线程不安全的，这种方式是不可取的。</p>
+<h1 id="参考文献">参考文献</h1><blockquote>
+<p>1.<a href="http://www.amazon.com/Java-SE-8-Really-Impatient/dp/0321927761" target="_blank" rel="external">Java SE 8 for the Really Impatient</a></p>
+<p>这是一本讲述Java 8 新特性的书，可能也是目前唯一的成体系的讲解Java 8新特性的书籍。内容非常全面，里面讲解新特性的例子非常的妙，简短但是又很有说服力。本文中的很多例子都来自这本书。并且归纳出了很多新特性需要注意的地方。另外，作者Cay S. Horstmann就是大名鼎鼎的《Core Java》的作者之一。</p>
+<p>2.<a href="http://www.angelikalanger.com/Lambdas/Lambdas.pdf" target="_blank" rel="external">Lambda Expressions in Java Tutorial</a></p>
+<p>这是一个培训机构的一份指导书，侧重于讲解Java 8中的Lambda表达式，本文中关于Lambda表达式的存在形式以及开头的例子都来源于该文献。</p>
+<p>3.<a href="http://docs.oracle.com/javase/8/docs/api/index.html" target="_blank" rel="external">Java 8 API Doc</a></p>
+<p>4.<a href="http://docs.oracle.com/javase/tutorial/" target="_blank" rel="external">The Java Tutorial</a></p>
+<p>官方的指导教材，目前已经针对Java 8作了全面的更新，优点是官方出品，权威，全面。缺点是讲解Lambda表达式新特性时，混合着很多关于Stream的内容，非常不利于新手快速了解新特性，并且语言也相对晦涩。</p>
+<p>5.<a href="http://codingblogs.net/2014/03/27/java8newfeature/">Java 8新特性</a></p>
+<p>官方Java 8新特性列表的中文版。</p>
+</blockquote>
+]]></content>
+    <summary type="html">
+    <![CDATA[<h1 id="1-什么是Stream">1.什么是Stream</h1><p>在Java 8之前，我们经常会写类似这样的代码：</p>
+<pre><code>List&lt;String&gt; wordList = ...
+int <span class="command">]]>
+    </summary>
+    
+      <category term="Java 8" scheme="http://codingblogs.net/tags/Java-8/"/>
+    
+      <category term="Stream API" scheme="http://codingblogs.net/tags/Stream-API/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[Lambda Expression in Java 8]]></title>
+    <link href="http://codingblogs.net/2014/09/19/Lambda-Expression-in-Java-8/"/>
+    <id>http://codingblogs.net/2014/09/19/Lambda-Expression-in-Java-8/</id>
+    <published>2014-09-19T11:20:49.000Z</published>
+    <updated>2015-07-18T14:01:48.000Z</updated>
+    <content type="html"><![CDATA[<p>除了Lisp，Haskell这些典型的函数式编程语言之外，很多现代高级编程语言像Python、Ruby、Scala、Groovy、Clojure甚至是C++都提供了<code>Lambda表达式</code>或者<code>闭包</code>这样的语言特性。而刚才提到的这些语言中，Scala、Groovy和Clojure实际上都是运行在JVM上的语言。尽管一直以来都有呼声要求Java语言提供这样的语言特性，但是直到最近几天Java 8发布，Java语言才算是真正的提供了这样的语言特性。真的可以说是“千呼万唤始出来”，但是不管怎么说，来得晚总比不来好。这篇文章主要聊一聊Java 8中的Lambda表达式以及引入Lambda表达式时为了保证与老版本的兼容性而引入的一些相关新特性。</p>
+<h1 id="1-为什么引入Lambda表达式">1.为什么引入Lambda表达式</h1><p>在正式的说Lambda表达式之前，我们先回顾一段我们非常熟悉的代码：</p>
+<pre><code><span class="keyword">import</span> java.io.<span class="keyword">File</span>;
+<span class="keyword">import</span> java.io.FileFilter;
+<span class="keyword">public</span> <span class="keyword">class</span> ListFilesLegacyVersion {
+    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> main(String[] args) {
+        <span class="keyword">File</span> dir = <span class="keyword">new</span> <span class="keyword">File</span>(<span class="string">"D:/"</span>);
+        <span class="keyword">File</span>[] files = dir.listFiles(<span class="keyword">new</span> FileFilter() {
+            @Override
+            <span class="keyword">public</span> <span class="keyword">boolean</span> accept(<span class="keyword">File</span> pathname) {
+                <span class="keyword">return</span> pathname.isFile();
+            }
+        });
+
+        <span class="keyword">for</span> (<span class="keyword">File</span> f : files) {
+            System.out.<span class="keyword">println</span>(f.getAbsolutePath());
+        }
+    }
+}
+</code></pre><p>这段代码的功能非常简单：将指定目录下所有的文件过滤出来，并且打印出这些文件的完整路径。File对象的listFiles方法声明如下：</p>
+<pre><code>public File<span class="attr_selector">[]</span> <span class="function">listFiles</span>(FileFilter <span class="attribute">filter</span>)
+</code></pre><p>该方法仅仅接收一个FileFilter类型参数，哪怕仅仅从字面意思我们也能大概的猜到FileFilter可能起到的是一个过滤的作用。既然过滤，就肯定需要按照某种特定的算法或者规则来进行。而接口FileFilter的定义如下：</p>
+<pre><code><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">FileFilter</span> </span>{
+    <span class="function"><span class="keyword">boolean</span> <span class="title">accept</span><span class="params">(File pathname)</span></span>;
+}
+</code></pre><p>该接口只有一个方法，返回一个boolean值。这个方法实际上就是程序员用来定制过滤规则的地方。符合这个规则的File对象会被筛选出来；而不符合这个规则的File对象则会被剔除出去。</p>
+<p>那么再看看前面的那段代码，我们创建一个实现了FileFilter接口的匿名内部类，并且复写该接口的accept方法，最根本的目的其实仅仅是为了提供一个判定逻辑。而这个例子中的判定逻辑仅仅是一行代码<code>pathname.isFile()</code>。</p>
+<p>在Java 8之前的Java代码中，有很多类似这样的场景下，我们需要将一段即写即用的逻辑或者一个功能传递给一个方法。在以往的代码中，我们需要为此建立一个匿名内部类，类中定义某个方法来包含这样的逻辑或者功能，然后创建一个对象，再传递给方法。实际上这种代码风格非常繁琐，尤其是在很多事件驱动的编程场景(比如Android开发)下。</p>
+<p>实际上，完全可以允许开发者将一个逻辑片段或者功能作为参数传递给方法，这样，开发者可以更加专注于逻辑的实现而不需要写大量上述的公式化的代码。这就是Java 8中引入Lambda表达式一个非常重要的应用场景。我们看一下上面那个例子的Lambda表达式版本：</p>
+<pre><code><span class="keyword">import</span> java.io.<span class="keyword">File</span>;
+<span class="keyword">public</span> <span class="keyword">class</span> ListFilesLambdaVersion {
+    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> main(String[] args) {
+        <span class="keyword">File</span> dir = <span class="keyword">new</span> <span class="keyword">File</span>(<span class="string">"D:/"</span>);
+        <span class="keyword">File</span>[] files = dir.listFiles(
+                (<span class="keyword">File</span> pathname) -&gt; {<span class="keyword">return</span> pathname.isFile();}
+        );
+        <span class="keyword">for</span> (<span class="keyword">File</span> f : files) {
+            System.out.<span class="keyword">println</span>(f.getAbsolutePath());
+        }
+    }
+}
+</code></pre><p>在这段代码中，listFiles方法接受的参数就是一个Lambda表达式：<code>(File pathname) -&gt; {return pathname.isFile();}</code>。</p>
+<h1 id="2-Lambda表达式语法">2.Lambda表达式语法</h1><p>乍一看，Lambda表达式非常像一个没有名称的方法，以上文中的例子看，他包含了一个方法的大部分组成部分：参数列表<code>(File pathname)</code>，方法体<code>{return pathname.isFile();}</code>。上面这个Lambda表达式与方法比，缺少了返回值类型声明，以及throws语句以及名称。而实际上，返回值类型和抛出的异常信息，编译器都可以从Lambda体中推断出来。</p>
+<p>从上面的例子中，我们可以基本的概括出Lambda表达式的语法形式：</p>
+<pre><code><span class="function"><span class="params">(parameters list)</span> -&gt;</span> { code block }    
+</code></pre><p>语法非常简单。我们完全可以在脑海中把Lambda表达式想象成一个函数。</p>
+<p>当参数列表为空时，我们依然需要提供一对圆括号。举个例子，在以往的Java代码中，新起一个线程执行一端打印数字的代码：</p>
+<pre><code><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">RunnableLegacyVersion</span> {
+    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span>(<span class="params">String[] args</span>) </span>{
+        <span class="keyword">new</span> Thread(
+            <span class="keyword">new</span> Runnable() {
+                @<span class="function">Override
+                <span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span>(<span class="params"></span>) </span>{
+                    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">100</span>; i++) {
+                        System.<span class="keyword">out</span>.println(i);
+                    }
+                }
+            }
+        ).start();
+    }
+}
+</code></pre><p>我们将这个例子中实现Runnable接口的逻辑改写成Lambda表达式，代码如下：</p>
+<pre><code>() -&gt; <span class="comment">{for(int i = 0; i &lt; 100; i++) {System.out.println(i);}</span>}
+</code></pre><p>如果一个Lambda表达式中的参数类型都可以被推断出来，那么我们甚至可以忽略参数的类型声明。这种情况比较常见与将Lambda表达式赋值给一个接口时。我们看一个例子：</p>
+<pre><code>FileFilter filter = <span class="function"><span class="params">(pathname)</span> -&gt;</span> {<span class="keyword">return</span> pathname.isFile();};
+</code></pre><p>(关于Lambda表达是赋值，我们会在后面详细的介绍)</p>
+<p>如果一个Lambda表达式参数列表中只有一个参数，并且这个参数的类型可以被推断出来，那么参数列表部分的圆括号也是可以省略的，上面的代码还可以写成：</p>
+<pre><code>FileFilter filter = pathname -&gt; {<span class="function"><span class="keyword">return</span> pathname.<span class="title">isFile</span><span class="params">()</span></span>;};
+</code></pre><p>永远不需要像定义方法那样显式声明一个Lambda表达式的返回类型，因为这个工作编译器会从上下文中推断出来。</p>
+<p>Java中的Lambda表达式语法就这么多，非常简单。</p>
+<h1 id="3-Java中的Lambda表达式的存在形式">3.Java中的Lambda表达式的存在形式</h1><p>我们还是以上文中提到的那个FileFilter代码片段为例。我们定义了一个Lambda表达式，然后将这个表达式作为参数传递给listFiles()方法。我们看一下listFiles方法的实现：</p>
+<pre><code><span class="keyword">public</span> File[] listFiles(FileFilter <span class="built_in">filter</span>) {
+    <span class="keyword">String</span> ss[] = list();
+    <span class="keyword">if</span> (ss == <span class="keyword">null</span>) <span class="keyword">return</span> <span class="keyword">null</span>;
+    ArrayList&lt;File&gt; files = <span class="keyword">new</span> ArrayList&lt;&gt;();
+    <span class="keyword">for</span> (<span class="keyword">String</span> s : ss) {
+        File f = <span class="keyword">new</span> File(s, <span class="keyword">this</span>);
+        <span class="keyword">if</span> ((<span class="built_in">filter</span> == <span class="keyword">null</span>) || <span class="built_in">filter</span>.accept(f))
+            files.<span class="built_in">add</span>(f);
+    }
+    <span class="keyword">return</span> files.toArray(<span class="keyword">new</span> File[files.<span class="built_in">size</span>()]);
+}
+</code></pre><p>很明显，listFiles方法接收的参数类型是FileFilter，在方法内部，调用FileFilter对象的accept方法。也就是说，当一个Lambda表达式被作为参数传递给方法时，他其实是被当作一个Java对象来对待。在上面的例子中，Lambda表达式实际上是一个指向FileFilter实现类的实例的引用，它和普通的Java对象一样，都有内存地址和明确的类型。在上面的例子中，Lambda表达式的类型就是FileFilter。</p>
+<p>很显然，Lambda表达式的定义和使用往往是同时进行的。实际上，Java编译器和运行时会全权负责Lambda对象(运行时代表Lambda表达式的对象)的表现和创建工作。Java编译器可以从上下文中获取到足够的信息来决定这个Lambda对象的类型，Java虚拟机会在运行时动态的根据编译器确定的类型去创建具体的对象。</p>
+<h1 id="4-函数接口">4.函数接口</h1><p>在很多函数式编程语言中，有专门的函数类型。而这种函数类型实际上是非常适合用来表现Lambda表达式的。然而在Java语言中，并没有这样的函数类型。Java中几乎一切都是对象。Java语言的设计者肯定也不会愿意为了引入Lambda表达式而对整个Java语言的类型系统进行大刀阔斧的改革。于是，函数接口作为一种折衷方案被采用。函数接口是一类特殊的接口类型，这一类接口只包含一个抽象方法。在没有引入这个概念之前，这一类接口实际上已经广泛的存在于Java API中。例如我们之前提到的Runnable、FileFilter，还有Closable、Readable、Callable、Iterable、Comparable等等。这一类接口往往被称作SAM(Single Abstract Method)接口。而Lambda表达式在运行时，会被转换成函数接口的子类型的对象。</p>
+<p>实际上，在Java中，Lambda表达式唯一可以做的就是和函数接口进行转换。这个转换过程是自动进行的，不需要代码干预。为了避免一直看的烦了，我们不再以刚才的listFile举例。我们重新看一个例子。</p>
+<pre><code>String[] words = <span class="keyword">new</span> String[]{<span class="string">"AAA"</span>,<span class="string">"BBBB"</span>,<span class="string">"CCCCC"</span>,<span class="string">"DDDDDD"</span>};
+Arrays.sort<span class="function"><span class="params">(words, (one, theOther)-&gt;{Integer.compare(one.length(), theOther.length())})</span></span>
+</code></pre><p>Arrays.sort方法原型如下：</p>
+<pre><code><span class="keyword">public</span> <span class="keyword">static</span> &lt;T&gt; <span class="keyword">void</span> <span class="keyword">sort</span>(T[] a, Comparator&lt;? <span class="keyword">super</span> T&gt; c)
+</code></pre><p>结合我们上面的使用场景，sort方法第二个参数需要接受的是一个Comparator<string>参数。实际上Comparator接口中有两个方法，但是我们提供的Lambda表达式刚好能够和compare方法匹配：该方法接收两个参数，返回一个int类型，并且不会抛出受检异常。于是，编译器会将这里的Lambda表达式转换成Comparator类型，然后在sort方法内部，Lambda表达式会被绑定给参数c，当c的方法compare被调用时，Lambda表达式体中的逻辑也就会被触发。</string></p>
+<p>也正是由于这种转换机制的存在，我们可以将Lambda表达式赋值给函数接口对象，下面的写法是完全成立的：</p>
+<pre><code>Comparator&lt;String&gt; c = (<span class="keyword">one</span>, theOther) -&gt; {Integer.<span class="keyword">compare</span>(<span class="keyword">one</span>.<span class="literal">length</span>(), theOther.<span class="literal">length</span>())}
+</code></pre><p>在Java 8中引入了一个专门的java.util.function包。这个包里面定义了很多函数接口。我们举几个简单的例子说明。</p>
+<ul>
+<li>Predicate<t>接口</t></li>
+</ul>
+<p>这个接口代表的是一类接受一个参数并且返回一个boolean值的功能抽象。其中有一个方法：</p>
+<pre><code>boolean test<span class="list">(<span class="keyword">T</span> <span class="literal">t</span>)</span><span class="comment">;</span>
+</code></pre><p>我们完全可以将listFiles那个例子中的Lambda表达式复制给该接口的对象，如下：</p>
+<pre><code>Predicate&lt;T&gt; p = <span class="function"><span class="params">(File pathname)</span> -&gt;</span> {pathname.isFile()}
+</code></pre><p>这时候，这个Lambda表达式的类型就变成Predicate了。从这里也可以看出，Lambda表达式的类型是依据上下文而定的。</p>
+<ul>
+<li>Consumer<t>接口</t></li>
+</ul>
+<p>这个接口接收一个参数，然后不返回任何值。其中有一个方法：</p>
+<pre><code>void accept<span class="list">(<span class="keyword">T</span> <span class="literal">t</span>)</span><span class="comment">;</span>
+</code></pre><p>这个接口和很多函数接口不同，主要是靠副作用来完成一些操作的。这里举个例子</p>
+<pre><code><span class="keyword">public</span> class ConsumerDemo {
+    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> main(<span class="keyword">String</span>[] args) {
+        <span class="keyword">String</span>[] strs = <span class="keyword">new</span> <span class="keyword">String</span>[]{<span class="string">"AAA"</span>,<span class="string">"BBBB"</span>,<span class="string">"CCCCC"</span>,<span class="string">"DDDDDD"</span>};
+        List&lt;<span class="keyword">String</span>&gt; list = Arrays.asList(strs);
+        list.stream().forEach((<span class="built_in">str</span>)-&gt;{System.out.<span class="built_in">println</span>(<span class="built_in">str</span>);});
+    }
+}
+</code></pre><p>这段代码完成的功能很简单：打印List中的每一个字符串。forEach方法签名如下：</p>
+<pre><code><span class="function"><span class="keyword">void</span> <span class="title">forEach</span><span class="params">(Consumer&lt;? <span class="keyword">super</span> T&gt; action)</span></span>;
+</code></pre><p>该方法接收一个Consumer对象，知道这一点，我们就很容易理解上面代码片段中的Lambda表达式了。(关于集合框架引入的stream以及forEach的相关内容，我会专门在另一篇文章中讨论)</p>
+<h1 id="5-方法引用">5.方法引用</h1><p>很多时候，当我们要将一个功能传递给其他代码，但是刚好有一些现有的方法能够实现这样的功能。我们完全没有必要写一个Lambda表达式，把这个已经的方法的实现逻辑再写一遍，我们直接把这个已有的方法传递过去不就好了吗？那么方法引用就提供了这样的便利性。在上面那个打印List中所有String元素的例子中，我们是这样实现的：</p>
+<pre><code>list.stream<span class="function"><span class="params">()</span>.<span class="title">forEach</span><span class="params">((str)-&gt;{System.out.println(str);})</span>;</span>
+</code></pre><p>我们完全可以使用方法引用来进一步简化代码：</p>
+<pre><code><span class="tag">list</span><span class="class">.stream</span>()<span class="class">.forEach</span>(<span class="rule"><span class="attribute">System.out</span>:<span class="value">:println)</span></span>;
+</code></pre><p>表达式<code>System.out::println</code>就是一个方法引用，他与<code>(str)-&gt;{System.out.println(str);}</code>在这里是等价的。</p>
+<p>方法引用主要有三种形式：</p>
+<pre><code>object::instanceMethod
+<span class="class"><span class="keyword">Class</span>::<span class="title">staticMethod</span></span>
+<span class="class"><span class="keyword">Class</span>::<span class="title">instanceMethod</span></span>
+</code></pre><p>在前两种情况下，方法引用都等价于给方法提供参数的Lambda表达式。比如<code>System.out::println</code>实际上相当于：</p>
+<pre><code>x -&gt; System<span class="class">.out</span><span class="class">.println</span>(x)
+</code></pre><p>第三种情况下，方法引用适用的第一个参数就变成方法的目标对象。比如<code>String::compareToIgnoreCase</code>实际上相当于：</p>
+<pre><code><span class="function"><span class="params">(x, y)</span> -&gt;</span> {x.compareToIgnoreCase(y)};
+</code></pre><p>方法引用可以使用<code>this</code>和<code>super</code>关键词。当使用<code>this::instanceMethod</code>实际上this指代的对象就成为了方法的目标对象(也就是在this上调用方法)。而<code>super::instanceMethod</code>则表示调用this对象父类所实现的方法版本。我们用代码来解释这个问题：</p>
+<pre><code><span class="class"><span class="keyword">class</span> <span class="title">Person</span> </span>{
+    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sayHello</span><span class="params">()</span> </span>{
+        System.out.println(<span class="string">"Hello!"</span>);
+    }
+}
+
+<span class="class"><span class="keyword">class</span> <span class="title">Student</span> <span class="keyword">extends</span> <span class="title">Person</span></span>{
+    <span class="annotation">@Override</span>
+    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sayHello</span><span class="params">()</span> </span>{
+        Thread thread = <span class="keyword">new</span> Thread(<span class="keyword">super</span>::sayHello);
+        thread.start();
+    }
+}
+
+<span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MethodReference</span> </span>{
+    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>{
+        Student student = <span class="keyword">new</span> Student();
+        student.sayHello();
+    }
+}
+</code></pre><p>这个例子的最终运行结果是<code>Hello!</code>。在子类Student的sayHello实现中，实际上是调用了父类对sayHello()的实现。为了能够使用方法引用，在Student类的sayHello中使用了线程。</p>
+<h1 id="6-构造器引用">6.构造器引用</h1><p>构造器也是一种方法，既然普通方法有方法引用，那么构造器自然也有自己的“方法引用”，称之为构造器应用。构造器引用与方法引用类似，但是构造器引用的方法名变成了<code>new</code>。我们直接举个例子。</p>
+<pre><code><span class="keyword">public</span> <span class="keyword">class</span> ConstructorReference {
+    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>{
+        String[] arr = <span class="keyword">new</span> String[]{<span class="string">"1"</span>, <span class="string">"2"</span>, <span class="string">"3"</span>};
+        List&lt;String&gt; <span class="built_in">list</span> = Arrays.asList(arr);
+        Stream&lt;Integer&gt; stream = <span class="built_in">list</span>.stream().<span class="built_in">map</span>(Integer::<span class="keyword">new</span>);
+        Integer[] integers = stream.toArray(Integer[]::<span class="keyword">new</span>);
+    }
+}
+</code></pre><p>这个例子将一个字符串形式表示的数字的列表转换成整型数组。Stream对象我会在另一篇文章中专门讲。</p>
+<p>map()方法原型如下：</p>
+<pre><code>&lt;R&gt; <span class="keyword">Stream&lt;R&gt; </span><span class="preprocessor">map</span>(<span class="preprocessor">Function</span>&lt;? super T, ? extends R&gt; mapper)<span class="comment">;</span>
+</code></pre><p>这个函数会对stream中的元素都应用Function，然后再返回这个结果Stream。Function函数接口代表一个接受一个参数T并且返回一个值R的函数。他有一个<code>R apply(T t)</code>方法。我们这里使用的构造器引用实际上等价于一个Function函数接口。对于Stream中的每一个元素，调用Integer的构造方法，并且将该元素作为参数传递进去。也就是对Stream中的每一个元素，执行下面代码：</p>
+<pre><code><span class="built_in">Integer</span> int <span class="subst">=</span> <span class="literal">new</span> <span class="built_in">Integer</span>(<span class="built_in">String</span> str);
+</code></pre><p>其中，str即是前面提到的Stream中的元素。</p>
+<h1 id="7-变量作用域">7.变量作用域</h1><p>Lambda表达式本身不具备自己的作用域，这一点和匿名内部类不一样。在Lambda表达式中定义的变量的作用域属于Lambda表达式所属的那个作用域。这句话多少有点拗口，我们依然通过一个例子来了解：</p>
+<pre><code><span class="keyword">public</span> void <span class="function"><span class="keyword">method</span><span class="params">()</span> <span class="comment">{
+    int i = 0;
+    Runnable r = () -&gt; {
+        int i = 0;    //编译错误，由于Lambda表达式没有自己的作用域，那么这个变量i和外层的i是会冲突的。
+    }</span> 
+}
+<span class="title">public</span> <span class="title">void</span> _<span class="title">method</span><span class="params">()</span> <span class="comment">{
+    int i = 0;
+    Runnable r = new Runnable() {
+        public void run() {
+            int i = 0;    //合法，匿名内部类是有自己的作用域的，内层的i与外层的i不会冲突。
+        }</span>
+    }
+}</span>
+</code></pre><p>也正是由于Lambda表达式没有自己的作用域，那么对于this和super的引用也就需要特别的留心。我们举一个例子：</p>
+<pre><code><span class="keyword">public</span> <span class="keyword">void</span> App {
+    <span class="keyword">public</span> <span class="keyword">static</span> <span class="function"><span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>{
+        Runnable r = () -&gt; {
+            <span class="keyword">this</span>.toString();
+        }
+    }
+}
+</code></pre><p>在这个例子中，this.toString()调用的是App对象的toString()。</p>
+<h1 id="8-default方法">8.default方法</h1><p>我们在前面已经多次提到了stream()方法。大家如果仔细的看Java 8的API文档会发现，这个stream方法实际上是定义在Collection接口中的。大家肯定会有一个疑问，在Java 8以前的版本中，Collection接口是没有这个方法的。也就是说，Java 8 在这个集合的顶层接口中添加的了新的方法。那么就会有一个疑问，老的代码能否在Java 8上运行呢？我们知道，接口中的方法都是抽象方法，老的实现了Collection接口的类在Java 8上显然会由于没有实现新加入的类似stream的方法而导致编译错误。实际上Java的设计者肯定在我们之前想到这个问题。他们采用的解决办法是引入default方法。也就是说，允许在接口中提供某些方法的具体实现，也就是说接口中的方法一旦声明为default就不再是abstract的。这样，在新版的Java Collection接口中，Java设计和实现着，通过这种机制，为新引入的stream方法提供具体的实现，即可解决上面我们提到的问题。我们可以写一段示例代码来演示一下这个问题：</p>
+<pre><code><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">DefaultMethodIntf</span> </span>{
+    <span class="function"><span class="keyword">default</span> <span class="keyword">void</span> <span class="title">stream</span><span class="params">()</span> </span>{
+        System.out.println(<span class="string">"Hello, I'm a new default method"</span>);
+    }
+    <span class="function"><span class="keyword">void</span> <span class="title">sayHello</span><span class="params">()</span></span>;
+}
+<span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DefaultMethod</span> <span class="keyword">implements</span> <span class="title">DefaultMethodIntf</span></span>{
+    <span class="annotation">@Override</span>
+    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sayHello</span><span class="params">()</span> </span>{
+        System.out.println(<span class="string">"sayHello method"</span>);
+    }
+}
+</code></pre><p>在这个例子中，DefaultMethod类实现了DefaultMethodIntf接口，但是完全没必要复写stream()，因为接口已经通过定义default方法的形式给出了具体的实现。怎么样，是不是还挺妙的。这样的话，以后的代码就不需要采用Interface-&gt;Abstract Class-&gt;Concrete Class的模式了。</p>
+<p>另外，在普通的类中是不允许定义default方法的，因为就没这个必要嘛。</p>
+<p>当接口中引入default方法，问题也会随之而来。现在我们有下面的类和接口：</p>
+<pre><code><span class="keyword">class</span> <span class="title">SuperClass</span> {
+    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sayHello</span>(<span class="params"></span>) </span>{
+        System.<span class="keyword">out</span>.println(<span class="string">"Person.sayHello"</span>);
+    }
+}
+<span class="keyword">interface</span> <span class="title">DefaultInterface</span> {
+    <span class="function"><span class="keyword">default</span> <span class="keyword">void</span> <span class="title">sayHello</span>(<span class="params"></span>) </span>{
+        System.<span class="keyword">out</span>.println(<span class="string">"DefaultInterface.sayHello"</span>);
+    }
+}
+</code></pre><p>当一个类同时集成SuperClass并且实现DefaultInterface，那么该类中的sayHello会有怎样的行为呢？这实际上是Java 8中的多重继承问题。在Java 8中多重继承有两条重要的判定规则：</p>
+<ul>
+<li>父类优先。当父类提供了一个方法实现，那么接口中同名同参数的default方法会被忽略。</li>
+<li>接口冲突。当一个接口提供了一个default方法，而另一个接口有一个同名同参数类型的方法(不论是否default方法)，子类同时实现这两个接口时，需要复写该方法。</li>
+</ul>
+<p>有了第一条规则，上面的例子的执行结果很明显是<code>Person.sayHello</code>。</p>
+<h1 id="9-_接口静态方法">9. 接口静态方法</h1><p>Java 8中允许给接口添加静态方法。在以前的Java版本中，有很多类似于Collection接口和Collections类的成对组合，前者是接口，后者是一个包含一堆静态方法的工具类，而这些静态方法的参数往往就是接口。而在Java 8中，接口可以直接提供静态方法，这样很多时候就不必专门提供类似Collections这样的工具类，而是直接将这种静态方法放在Collection中，这样，代码的可读性会更好。</p>
+<p>以上基本上是Java 8中与Lambda表达式相关的一些新特性。算是我最近阅读一些文档和材料的一份笔记。记录下来，备忘。</p>
+<h1 id="参考文献">参考文献</h1><blockquote>
+<p>1.<a href="http://www.amazon.com/Java-SE-8-Really-Impatient/dp/0321927761" target="_blank" rel="external">Java SE 8 for the Really Impatient</a></p>
+<p>这是一本讲述Java 8 新特性的书，可能也是目前唯一的成体系的讲解Java 8新特性的书籍。内容非常全面，里面讲解新特性的例子非常的妙，简短但是又很有说服力。本文中的很多例子都来自这本书。并且归纳出了很多新特性需要注意的地方。另外，作者Cay S. Horstmann就是大名鼎鼎的《Core Java》的作者之一。</p>
+<p>2.<a href="http://www.angelikalanger.com/Lambdas/Lambdas.pdf" target="_blank" rel="external">Lambda Expressions in Java Tutorial</a></p>
+<p>这是一个培训机构的一份指导书，侧重于讲解Java 8中的Lambda表达式，本文中关于Lambda表达式的存在形式以及开头的例子都来源于该文献。</p>
+<p>3.<a href="http://docs.oracle.com/javase/8/docs/api/index.html" target="_blank" rel="external">Java 8 API Doc</a></p>
+<p>4.<a href="http://docs.oracle.com/javase/tutorial/" target="_blank" rel="external">The Java Tutorial</a></p>
+<p>官方的指导教材，目前已经针对Java 8作了全面的更新，优点是官方出品，权威，全面。缺点是讲解Lambda表达式新特性时，混合着很多关于Stream的内容，非常不利于新手快速了解新特性，并且语言也相对晦涩。</p>
+<p>5.<a href="http://codingblogs.net/2014/03/27/java8newfeature/">Java 8新特性</a></p>
+<p>官方Java 8新特性列表的中文版。</p>
+</blockquote>
+]]></content>
+    <summary type="html">
+    <![CDATA[<p>除了Lisp，Haskell这些典型的函数式编程语言之外，很多现代高级编程语言像Python、Ruby、Scala、Groovy、Clojure甚至是C++都提供了<code>Lambda表达式</code>或者<code>闭包</code>这样的语言特性。而刚才提到的这些]]>
+    </summary>
+    
+      <category term="Java 8" scheme="http://codingblogs.net/tags/Java-8/"/>
+    
+      <category term="Lambda Expression" scheme="http://codingblogs.net/tags/Lambda-Expression/"/>
+    
+  </entry>
+  
+  <entry>
+    <title><![CDATA[Java 8 new features]]></title>
+    <link href="http://codingblogs.net/2014/09/19/Java-8-new-features/"/>
+    <id>http://codingblogs.net/2014/09/19/Java-8-new-features/</id>
+    <published>2014-09-19T11:19:35.000Z</published>
+    <updated>2015-07-18T14:01:02.000Z</updated>
+    <content type="html"><![CDATA[<blockquote>
+<p>原文地址：<a href="http://www.oracle.com/technetwork/java/javase/8-whats-new-2157071.html" target="_blank" rel="external">What’s New in JDK 8</a></p>
+<p>仅仅是方便大家了解JDK8有哪些新特性。并非100%逐字翻译，特别第四部分。</p>
+</blockquote>
+<h1 id="1-Java语言">1.Java语言</h1><ul>
+<li><code>Lambda</code>表达式</li>
+</ul>
+<p>这个版本的JDK中引入了新的语言特性——<code>lambda</code>表达式。<code>lambda</code>表达式允许我们将功能作为参数传递给方法，也就是所谓的“代码即是数据”。<code>lambda</code>表达式允许我们更加紧凑的表达那些只含有一个方法的接口的实例(也就是函数接口)。</p>
+<ul>
+<li>方法引用</li>
+</ul>
+<p>方法引用可以为已经有名字的方法提供更加便于阅读的<code>lambda</code>表达式。</p>
+<ul>
+<li>默认方法</li>
+</ul>
+<p>默认方法允许往类库中的接口添加新的方法并且保证与老版本的代码二进制兼容。</p>
+<ul>
+<li>重复注解 </li>
+</ul>
+<p>允许对一个声明或者类型使用同样的注解多次。</p>
+<ul>
+<li>类型注解</li>
+</ul>
+<p>允许不仅仅在类型声明的时候使用注解，而是可以在所有类型出现的地方使用注解。该特性配合插件式的类型系统使用，可以提升代码的类型检查能力。</p>
+<ul>
+<li>增强的类型推断 </li>
+</ul>
+<ul>
+<li>方法参数反射 </li>
+</ul>
+<h1 id="2-集合框架">2.集合框架</h1><ul>
+<li>java.util.stream </li>
+</ul>
+<p>对集合对象的<code>stream</code>进行函数式操作。<code>stream</code>API被集成进了<code>collection</code>API，允许对集合对象进行批量操作。例如对集合进行顺序或者并行的<code>map-reduce</code>变换。</p>
+<ul>
+<li>HashMap性能提升。(当key出现碰撞)</li>
+</ul>
+<h1 id="3-Compact_Profiles">3.Compact Profiles</h1><p>提供了一组预定义的JavaSE的子集，方便一些小设备上不需要引用一整套的Java平台。<a href="http://docs.oracle.com/javase/8/docs/technotes/guides/compactprofiles/" target="_blank" rel="external">Compact Profiles</a></p>
+<h1 id="4-安全">4.安全</h1><ul>
+<li>默认支持客户端TLS1.2</li>
+<li>添加一个新的<code>AccessController.doPrivileged</code>变种。</li>
+<li>更强的加密算法。</li>
+<li>在<code>JSSE Server</code>中支持<code>SSL/TLS Server Name Indication (SNI)</code>扩展</li>
+<li>支持<code>AEAD</code>算法。</li>
+<li><code>KeyStore</code>增强，包括新的<code>Domain KeyStore</code>类型<code>java.security.DomainLoadStoreParameter</code>，以及keystore工具的心命令行选项<code>-importpassword</code></li>
+<li><code>SHA-224</code>消息摘要</li>
+<li>加强支持<code>NSA Suite B密码</code></li>
+<li>更好的支持高熵随机数生成。</li>
+<li>新的<code>java.security.cert.PKIXRevocationChecker</code>类</li>
+<li>Windows下64位PKCS11</li>
+<li><code>Kerberos 5 Replay Caching</code>中新的rcache类型。</li>
+<li>支持<code>Kerberos 5 Protocol Transition</code></li>
+<li>默认关闭<code>Kerberos 5 weak encryption</code></li>
+<li><code>Unbound SASL for the GSS-API/Kerberos 5 mechanism</code></li>
+<li><code>SASL service for multiple host names</code></li>
+<li>MacOS下的与本地JGSS的JNI桥接</li>
+<li>在<code>SunJSSE provider</code>中支持更强的<code>ephemeral DH keys</code></li>
+<li>在<code>JSSE</code>中支持服务器端自定义<code>cipher suites preference</code></li>
+</ul>
+<h1 id="5-JavaFX">5.JavaFX</h1><ul>
+<li>全新的<code>Modena</code>主题。详见<a href="http://fxexperience.com/2013/03/modena-theme-update/" target="_blank" rel="external">fxexperience.com</a></li>
+<li><code>SwingNode</code>类允许在JavaFX中嵌入Swing的内容。详见<a href="http://docs.oracle.com/javase/8/javafx/api/javafx/embed/swing/SwingNode.html" target="_blank" rel="external">SwingNode API</a>和<a href="http://docs.oracle.com/javase/8/javafx/interoperability-tutorial/embed-swing.htm" target="_blank" rel="external">Embedding Swing Content in JavaFX Applications</a></li>
+<li>新的控件<code>DatePicker</code>和<code>TreeTableView</code></li>
+<li>新的<code>javafx.print</code>包提供打印API</li>
+<li>3D图形图像功能提升。</li>
+<li><code>WebView</code>类提供新的特性以及一些提升。关于对HTML5 websocket，web worker以及web fonts的支持，详见<a href="http://docs.oracle.com/javase/8/javafx/embedded-browser-tutorial/index.html" target="_blank" rel="external">Supported Features of HTML5</a></li>
+<li>增强文本支持，包括双向文字支持，空间中对复杂文本例如泰语和印地文的支持，以及在Text Node中支持多行多样式文本。</li>
+<li>高清显示支持。</li>
+<li>所有CSS Styleable类变成共有API，详见<a href="http://docs.oracle.com/javase/8/javafx/api/javafx/css/package-frame.html" target="_blank" rel="external">javafx.css</a></li>
+<li>全新的<code>ScheduledService</code>类允许自动重启服务。</li>
+<li>JavaFX支持ARM平台。</li>
+</ul>
+<h1 id="6-工具">6.工具</h1><ul>
+<li><code>jjs</code>指令用来调用<code>Nashorn</code>引擎。</li>
+<li><code>java</code>命令可以启动JavaFX应用。</li>
+<li><code>java</code>man page重写了。</li>
+<li><code>jdeps</code>命令可以用来分析class文件。</li>
+<li><code>Java Management Extensions(JMX)</code>可以远程访问诊断命令。</li>
+<li><code>jarsigner</code>时间签名</li>
+<li><p><code>javac</code>工具：</p>
+<ul>
+<li><code>-parameters</code>选项可以存储正式的参数名，并且允许反射API访问这些参数名。</li>
+<li>JLS 15.23一节中描述的<code>equality operation</code>类型规则，javac可以正确强制执行。</li>
+<li>使用<code>-Xdoclint</code>选项，javac命令可以检查文档注释的内容。详情参阅<code>javac -X</code>,同样javadoc命令默认也会开启该功能。</li>
+<li>javac工具提供新的选项<code>-h</code>可以根据需要生成本地头文件。该选项需要制定一个目录，用于存储生成的头文件。可以为任意含有native方法或者新的<code>java.lang.annotation.Native</code>注解类型声明的常量的类生成头文件。</li>
+</ul>
+</li>
+<li><p><code>Javadoc</code>工具 </p>
+<ul>
+<li>javadoc 工具支持全新的<code>DocTree</code>API，允许按照抽象的语法树来遍历文档注释</li>
+<li>javadoc 工具支持全新的<code>Javadoc Access API</code>，允许在应用中直接调用javadoc而不用新启动一个进程。</li>
+<li>javadoc 目前可以检查Java文档注释的内容。</li>
+</ul>
+</li>
+</ul>
+<h1 id="7-国际化">7.国际化</h1><ul>
+<li>加强Unicode支持，支持Unicode 6.2.0。 </li>
+<li>采用Unicode CLDR Data，提供 java.locale.providers系统属性。</li>
+<li>新的Calendar和Locale API</li>
+<li>允许安装自定义的Resource Bundle作为扩展。</li>
+</ul>
+<h1 id="8-部署">8.部署</h1><ul>
+<li>Applet和Java Web Start应用可以使用<code>URLPermission</code>与启动该应用的后端服务建立连接。<code>SocketPermission</code>不再使用。</li>
+<li>所有安全级别的jar包中的manifest文件中都需要提供<code>Permissions</code>属性。</li>
+</ul>
+<h1 id="9-全新的DateTime_API">9.全新的DateTime API</h1><p>一组新的Java包来支持一个复杂的date-time模型。</p>
+<h1 id="10-脚本">10.脚本</h1><ul>
+<li>Nashorn js脚本引擎</li>
+</ul>
+<h1 id="11-Pack200">11.Pack200</h1><ul>
+<li>提供JSR 292提出的Pack200支持。</li>
+<li>支持JSR-292, JSR-308 and JSR-335标准提到的class文件变化。</li>
+</ul>
+<h1 id="12-_IO_and_NIO">12. IO and NIO</h1><ul>
+<li>为Solaries提供新的SelectorProvider实现</li>
+<li>缩小 <code>&lt;JDK_HOME&gt;/jre/lib/charsets.jar</code> 文件大小。</li>
+<li><code>java.lang.String(byte[], *)</code> 和 <code>java.lang.String.getBytes()</code> 性能提升</li>
+</ul>
+<h1 id="13-java-lang_和_java-util_包">13.<code>java.lang</code> 和 <code>java.util</code> 包</h1><ul>
+<li>并行数组排序</li>
+<li>标准Base64编解码</li>
+<li>无符号运算支持</li>
+</ul>
+<h1 id="14-JDBC">14.JDBC</h1><ul>
+<li>移除<code>JDBC-ODBC</code>桥接</li>
+<li><code>JDBC 4.2</code>新特性。</li>
+</ul>
+<h1 id="15-Java_DB新版本">15.Java DB新版本</h1><h1 id="16-网络">16.网络</h1><ul>
+<li>添加<code>java.net.URLPermission</code></li>
+<li>如果在<code>java.net.HttpURLConnection</code>中已经安装了security manager，那么请求建立连接需要权限验证。(不介绍)</li>
+</ul>
+<h1 id="17-并发">17.并发</h1><ul>
+<li><code>java.util.concurrent</code>包中有新的类和接口引入。</li>
+<li><code>java.util.concurrent.ConcurrentHashMap</code>类中添加了新方法，用于在新的stream api和lambda表达式的基础上提供聚合操作。</li>
+<li><code>java.util.concurrent.atomic</code>包中引入了新的类来支持<code>scalable updatable variables</code></li>
+<li><code>java.util.concurrent.ForkJoinPool</code>中添加了新方法来支持通用池。</li>
+<li>引入<code>java.util.concurrent.locks.StampedLock</code>类，提供三种基于锁的读写访问。</li>
+</ul>
+<h1 id="18-Java_XML_-_JAXP">18.Java XML - JAXP</h1><h1 id="19-_Hotspot虚拟机">19. Hotspot虚拟机</h1><ul>
+<li><code>Advanced Encryption Standard (AES)</code>支持 <code>-XX:+UseAES -XX:+UseAESIntrinsics</code> <code>-XX:-UseAES -XX:-UseAESIntrinsics</code></li>
+<li>移除永久区<code>PermGen</code></li>
+<li>方法调用的字节码指令上支持Java语言新引入的默认方法。</li>
+</ul>
+<h1 id="20-Java_Mission_Control_5-3">20.Java Mission Control 5.3</h1>]]></content>
+    <summary type="html">
+    <![CDATA[<blockquote>
+<p>原文地址：<a href="http://www.oracle.com/technetwork/java/javase/8-whats-new-2157071.html" target="_blank" rel="external">What’s ]]>
+    </summary>
+    
+      <category term="Java 8" scheme="http://codingblogs.net/tags/Java-8/"/>
+    
+  </entry>
+  
+</feed>

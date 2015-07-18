@@ -1,0 +1,705 @@
+
+ <!DOCTYPE HTML>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  
+    <title>Lambda Expression in Java 8 | wawlian说</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no">
+    
+    <meta name="author" content="wawlian">
+    
+
+    
+    <meta name="description" content="除了Lisp，Haskell这些典型的函数式编程语言之外，很多现代高级编程语言像Python、Ruby、Scala、Groovy、Clojure甚至是C++都提供了Lambda表达式或者闭包这样的语言特性。而刚才提到的这些语言中，Scala、Groovy和Clojure实际上都是运行在JVM上的语言。尽管一直以来都有呼声要求Java语言提供这样的语言特性，但是直到最近几天Java 8发布，Java">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Lambda Expression in Java 8">
+<meta property="og:url" content="http://codingblogs.net/2014/09/19/Lambda-Expression-in-Java-8/index.html">
+<meta property="og:site_name" content="wawlian说">
+<meta property="og:description" content="除了Lisp，Haskell这些典型的函数式编程语言之外，很多现代高级编程语言像Python、Ruby、Scala、Groovy、Clojure甚至是C++都提供了Lambda表达式或者闭包这样的语言特性。而刚才提到的这些语言中，Scala、Groovy和Clojure实际上都是运行在JVM上的语言。尽管一直以来都有呼声要求Java语言提供这样的语言特性，但是直到最近几天Java 8发布，Java">
+<meta property="og:updated_time" content="2015-07-18T14:01:48.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Lambda Expression in Java 8">
+<meta name="twitter:description" content="除了Lisp，Haskell这些典型的函数式编程语言之外，很多现代高级编程语言像Python、Ruby、Scala、Groovy、Clojure甚至是C++都提供了Lambda表达式或者闭包这样的语言特性。而刚才提到的这些语言中，Scala、Groovy和Clojure实际上都是运行在JVM上的语言。尽管一直以来都有呼声要求Java语言提供这样的语言特性，但是直到最近几天Java 8发布，Java">
+<meta name="twitter:creator" content="@wawlian">
+<link rel="publisher" href="104724126254137490000">
+
+    
+    <link rel="alternative" href="/atom.xml" title="wawlian说" type="application/atom+xml">
+    
+    
+    <link rel="icon" href="/img/favicon.ico">
+    
+    
+    <link rel="apple-touch-icon" href="/img/jacman.jpg">
+    <link rel="apple-touch-icon-precomposed" href="/img/jacman.jpg">
+    
+    <link rel="stylesheet" href="/css/style.css" type="text/css">
+</head>
+
+  <body>
+    <header>
+      
+<div>
+		
+			<div id="textlogo">
+				<h1 class="site-name"><a href="/" title="wawlian说">wawlian说</a></h1>
+				<h2 class="blog-motto"></h2>
+			</div>
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="菜单">
+			</a></div>
+			<nav class="animated">
+				<ul>
+					<ul>
+					 
+						<li><a href="/">首页</a></li>
+					
+						<li><a href="/archives">归档</a></li>
+					
+					<li>
+ 					
+					<form class="search" action="//google.com/search" method="get" accept-charset="utf-8">
+						<label>Search</label>
+						<input type="search" id="search" name="q" autocomplete="off" maxlength="20" placeholder="搜索" />
+						<input type="hidden" name="q" value="site:codingblogs.net">
+					</form>
+					
+					</li>
+				</ul>
+			</nav>			
+</div>
+    </header>
+    <div id="container">
+      <div id="main" class="post" itemscope itemprop="blogPost">
+  
+	<article itemprop="articleBody"> 
+		<header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2014/09/19/Lambda-Expression-in-Java-8/" title="Lambda Expression in Java 8" itemprop="url">Lambda Expression in Java 8</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="https://plus.google.com/104724126254137490000?rel=author" title="wawlian" target="_blank" itemprop="author">wawlian</a>
+		
+  <p class="article-time">
+    <time datetime="2014-09-19T11:20:49.000Z" itemprop="datePublished"> 发表于 2014-09-19</time>
+    
+  </p>
+</header>
+	<div class="article-content">
+		
+		<p>除了Lisp，Haskell这些典型的函数式编程语言之外，很多现代高级编程语言像Python、Ruby、Scala、Groovy、Clojure甚至是C++都提供了<code>Lambda表达式</code>或者<code>闭包</code>这样的语言特性。而刚才提到的这些语言中，Scala、Groovy和Clojure实际上都是运行在JVM上的语言。尽管一直以来都有呼声要求Java语言提供这样的语言特性，但是直到最近几天Java 8发布，Java语言才算是真正的提供了这样的语言特性。真的可以说是“千呼万唤始出来”，但是不管怎么说，来得晚总比不来好。这篇文章主要聊一聊Java 8中的Lambda表达式以及引入Lambda表达式时为了保证与老版本的兼容性而引入的一些相关新特性。</p>
+<h1 id="1-为什么引入Lambda表达式">1.为什么引入Lambda表达式</h1><p>在正式的说Lambda表达式之前，我们先回顾一段我们非常熟悉的代码：</p>
+<pre><code><span class="keyword">import</span> java.io.<span class="keyword">File</span>;
+<span class="keyword">import</span> java.io.FileFilter;
+<span class="keyword">public</span> <span class="keyword">class</span> ListFilesLegacyVersion {
+    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> main(String[] args) {
+        <span class="keyword">File</span> dir = <span class="keyword">new</span> <span class="keyword">File</span>(<span class="string">"D:/"</span>);
+        <span class="keyword">File</span>[] files = dir.listFiles(<span class="keyword">new</span> FileFilter() {
+            @Override
+            <span class="keyword">public</span> <span class="keyword">boolean</span> accept(<span class="keyword">File</span> pathname) {
+                <span class="keyword">return</span> pathname.isFile();
+            }
+        });
+
+        <span class="keyword">for</span> (<span class="keyword">File</span> f : files) {
+            System.out.<span class="keyword">println</span>(f.getAbsolutePath());
+        }
+    }
+}
+</code></pre><p>这段代码的功能非常简单：将指定目录下所有的文件过滤出来，并且打印出这些文件的完整路径。File对象的listFiles方法声明如下：</p>
+<pre><code>public File<span class="attr_selector">[]</span> <span class="function">listFiles</span>(FileFilter <span class="attribute">filter</span>)
+</code></pre><p>该方法仅仅接收一个FileFilter类型参数，哪怕仅仅从字面意思我们也能大概的猜到FileFilter可能起到的是一个过滤的作用。既然过滤，就肯定需要按照某种特定的算法或者规则来进行。而接口FileFilter的定义如下：</p>
+<pre><code><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">FileFilter</span> </span>{
+    <span class="function"><span class="keyword">boolean</span> <span class="title">accept</span><span class="params">(File pathname)</span></span>;
+}
+</code></pre><p>该接口只有一个方法，返回一个boolean值。这个方法实际上就是程序员用来定制过滤规则的地方。符合这个规则的File对象会被筛选出来；而不符合这个规则的File对象则会被剔除出去。</p>
+<p>那么再看看前面的那段代码，我们创建一个实现了FileFilter接口的匿名内部类，并且复写该接口的accept方法，最根本的目的其实仅仅是为了提供一个判定逻辑。而这个例子中的判定逻辑仅仅是一行代码<code>pathname.isFile()</code>。</p>
+<p>在Java 8之前的Java代码中，有很多类似这样的场景下，我们需要将一段即写即用的逻辑或者一个功能传递给一个方法。在以往的代码中，我们需要为此建立一个匿名内部类，类中定义某个方法来包含这样的逻辑或者功能，然后创建一个对象，再传递给方法。实际上这种代码风格非常繁琐，尤其是在很多事件驱动的编程场景(比如Android开发)下。</p>
+<p>实际上，完全可以允许开发者将一个逻辑片段或者功能作为参数传递给方法，这样，开发者可以更加专注于逻辑的实现而不需要写大量上述的公式化的代码。这就是Java 8中引入Lambda表达式一个非常重要的应用场景。我们看一下上面那个例子的Lambda表达式版本：</p>
+<pre><code><span class="keyword">import</span> java.io.<span class="keyword">File</span>;
+<span class="keyword">public</span> <span class="keyword">class</span> ListFilesLambdaVersion {
+    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> main(String[] args) {
+        <span class="keyword">File</span> dir = <span class="keyword">new</span> <span class="keyword">File</span>(<span class="string">"D:/"</span>);
+        <span class="keyword">File</span>[] files = dir.listFiles(
+                (<span class="keyword">File</span> pathname) -&gt; {<span class="keyword">return</span> pathname.isFile();}
+        );
+        <span class="keyword">for</span> (<span class="keyword">File</span> f : files) {
+            System.out.<span class="keyword">println</span>(f.getAbsolutePath());
+        }
+    }
+}
+</code></pre><p>在这段代码中，listFiles方法接受的参数就是一个Lambda表达式：<code>(File pathname) -&gt; {return pathname.isFile();}</code>。</p>
+<h1 id="2-Lambda表达式语法">2.Lambda表达式语法</h1><p>乍一看，Lambda表达式非常像一个没有名称的方法，以上文中的例子看，他包含了一个方法的大部分组成部分：参数列表<code>(File pathname)</code>，方法体<code>{return pathname.isFile();}</code>。上面这个Lambda表达式与方法比，缺少了返回值类型声明，以及throws语句以及名称。而实际上，返回值类型和抛出的异常信息，编译器都可以从Lambda体中推断出来。</p>
+<p>从上面的例子中，我们可以基本的概括出Lambda表达式的语法形式：</p>
+<pre><code><span class="function"><span class="params">(parameters list)</span> -&gt;</span> { code block }    
+</code></pre><p>语法非常简单。我们完全可以在脑海中把Lambda表达式想象成一个函数。</p>
+<p>当参数列表为空时，我们依然需要提供一对圆括号。举个例子，在以往的Java代码中，新起一个线程执行一端打印数字的代码：</p>
+<pre><code><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">RunnableLegacyVersion</span> {
+    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span>(<span class="params">String[] args</span>) </span>{
+        <span class="keyword">new</span> Thread(
+            <span class="keyword">new</span> Runnable() {
+                @<span class="function">Override
+                <span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span>(<span class="params"></span>) </span>{
+                    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">100</span>; i++) {
+                        System.<span class="keyword">out</span>.println(i);
+                    }
+                }
+            }
+        ).start();
+    }
+}
+</code></pre><p>我们将这个例子中实现Runnable接口的逻辑改写成Lambda表达式，代码如下：</p>
+<pre><code>() -&gt; <span class="comment">{for(int i = 0; i &lt; 100; i++) {System.out.println(i);}</span>}
+</code></pre><p>如果一个Lambda表达式中的参数类型都可以被推断出来，那么我们甚至可以忽略参数的类型声明。这种情况比较常见与将Lambda表达式赋值给一个接口时。我们看一个例子：</p>
+<pre><code>FileFilter filter = <span class="function"><span class="params">(pathname)</span> -&gt;</span> {<span class="keyword">return</span> pathname.isFile();};
+</code></pre><p>(关于Lambda表达是赋值，我们会在后面详细的介绍)</p>
+<p>如果一个Lambda表达式参数列表中只有一个参数，并且这个参数的类型可以被推断出来，那么参数列表部分的圆括号也是可以省略的，上面的代码还可以写成：</p>
+<pre><code>FileFilter filter = pathname -&gt; {<span class="function"><span class="keyword">return</span> pathname.<span class="title">isFile</span><span class="params">()</span></span>;};
+</code></pre><p>永远不需要像定义方法那样显式声明一个Lambda表达式的返回类型，因为这个工作编译器会从上下文中推断出来。</p>
+<p>Java中的Lambda表达式语法就这么多，非常简单。</p>
+<h1 id="3-Java中的Lambda表达式的存在形式">3.Java中的Lambda表达式的存在形式</h1><p>我们还是以上文中提到的那个FileFilter代码片段为例。我们定义了一个Lambda表达式，然后将这个表达式作为参数传递给listFiles()方法。我们看一下listFiles方法的实现：</p>
+<pre><code><span class="keyword">public</span> File[] listFiles(FileFilter <span class="built_in">filter</span>) {
+    <span class="keyword">String</span> ss[] = list();
+    <span class="keyword">if</span> (ss == <span class="keyword">null</span>) <span class="keyword">return</span> <span class="keyword">null</span>;
+    ArrayList&lt;File&gt; files = <span class="keyword">new</span> ArrayList&lt;&gt;();
+    <span class="keyword">for</span> (<span class="keyword">String</span> s : ss) {
+        File f = <span class="keyword">new</span> File(s, <span class="keyword">this</span>);
+        <span class="keyword">if</span> ((<span class="built_in">filter</span> == <span class="keyword">null</span>) || <span class="built_in">filter</span>.accept(f))
+            files.<span class="built_in">add</span>(f);
+    }
+    <span class="keyword">return</span> files.toArray(<span class="keyword">new</span> File[files.<span class="built_in">size</span>()]);
+}
+</code></pre><p>很明显，listFiles方法接收的参数类型是FileFilter，在方法内部，调用FileFilter对象的accept方法。也就是说，当一个Lambda表达式被作为参数传递给方法时，他其实是被当作一个Java对象来对待。在上面的例子中，Lambda表达式实际上是一个指向FileFilter实现类的实例的引用，它和普通的Java对象一样，都有内存地址和明确的类型。在上面的例子中，Lambda表达式的类型就是FileFilter。</p>
+<p>很显然，Lambda表达式的定义和使用往往是同时进行的。实际上，Java编译器和运行时会全权负责Lambda对象(运行时代表Lambda表达式的对象)的表现和创建工作。Java编译器可以从上下文中获取到足够的信息来决定这个Lambda对象的类型，Java虚拟机会在运行时动态的根据编译器确定的类型去创建具体的对象。</p>
+<h1 id="4-函数接口">4.函数接口</h1><p>在很多函数式编程语言中，有专门的函数类型。而这种函数类型实际上是非常适合用来表现Lambda表达式的。然而在Java语言中，并没有这样的函数类型。Java中几乎一切都是对象。Java语言的设计者肯定也不会愿意为了引入Lambda表达式而对整个Java语言的类型系统进行大刀阔斧的改革。于是，函数接口作为一种折衷方案被采用。函数接口是一类特殊的接口类型，这一类接口只包含一个抽象方法。在没有引入这个概念之前，这一类接口实际上已经广泛的存在于Java API中。例如我们之前提到的Runnable、FileFilter，还有Closable、Readable、Callable、Iterable、Comparable等等。这一类接口往往被称作SAM(Single Abstract Method)接口。而Lambda表达式在运行时，会被转换成函数接口的子类型的对象。</p>
+<p>实际上，在Java中，Lambda表达式唯一可以做的就是和函数接口进行转换。这个转换过程是自动进行的，不需要代码干预。为了避免一直看的烦了，我们不再以刚才的listFile举例。我们重新看一个例子。</p>
+<pre><code>String[] words = <span class="keyword">new</span> String[]{<span class="string">"AAA"</span>,<span class="string">"BBBB"</span>,<span class="string">"CCCCC"</span>,<span class="string">"DDDDDD"</span>};
+Arrays.sort<span class="function"><span class="params">(words, (one, theOther)-&gt;{Integer.compare(one.length(), theOther.length())})</span></span>
+</code></pre><p>Arrays.sort方法原型如下：</p>
+<pre><code><span class="keyword">public</span> <span class="keyword">static</span> &lt;T&gt; <span class="keyword">void</span> <span class="keyword">sort</span>(T[] a, Comparator&lt;? <span class="keyword">super</span> T&gt; c)
+</code></pre><p>结合我们上面的使用场景，sort方法第二个参数需要接受的是一个Comparator<string>参数。实际上Comparator接口中有两个方法，但是我们提供的Lambda表达式刚好能够和compare方法匹配：该方法接收两个参数，返回一个int类型，并且不会抛出受检异常。于是，编译器会将这里的Lambda表达式转换成Comparator类型，然后在sort方法内部，Lambda表达式会被绑定给参数c，当c的方法compare被调用时，Lambda表达式体中的逻辑也就会被触发。</string></p>
+<p>也正是由于这种转换机制的存在，我们可以将Lambda表达式赋值给函数接口对象，下面的写法是完全成立的：</p>
+<pre><code>Comparator&lt;String&gt; c = (<span class="keyword">one</span>, theOther) -&gt; {Integer.<span class="keyword">compare</span>(<span class="keyword">one</span>.<span class="literal">length</span>(), theOther.<span class="literal">length</span>())}
+</code></pre><p>在Java 8中引入了一个专门的java.util.function包。这个包里面定义了很多函数接口。我们举几个简单的例子说明。</p>
+<ul>
+<li>Predicate<t>接口</t></li>
+</ul>
+<p>这个接口代表的是一类接受一个参数并且返回一个boolean值的功能抽象。其中有一个方法：</p>
+<pre><code>boolean test<span class="list">(<span class="keyword">T</span> <span class="literal">t</span>)</span><span class="comment">;</span>
+</code></pre><p>我们完全可以将listFiles那个例子中的Lambda表达式复制给该接口的对象，如下：</p>
+<pre><code>Predicate&lt;T&gt; p = <span class="function"><span class="params">(File pathname)</span> -&gt;</span> {pathname.isFile()}
+</code></pre><p>这时候，这个Lambda表达式的类型就变成Predicate了。从这里也可以看出，Lambda表达式的类型是依据上下文而定的。</p>
+<ul>
+<li>Consumer<t>接口</t></li>
+</ul>
+<p>这个接口接收一个参数，然后不返回任何值。其中有一个方法：</p>
+<pre><code>void accept<span class="list">(<span class="keyword">T</span> <span class="literal">t</span>)</span><span class="comment">;</span>
+</code></pre><p>这个接口和很多函数接口不同，主要是靠副作用来完成一些操作的。这里举个例子</p>
+<pre><code><span class="keyword">public</span> class ConsumerDemo {
+    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> main(<span class="keyword">String</span>[] args) {
+        <span class="keyword">String</span>[] strs = <span class="keyword">new</span> <span class="keyword">String</span>[]{<span class="string">"AAA"</span>,<span class="string">"BBBB"</span>,<span class="string">"CCCCC"</span>,<span class="string">"DDDDDD"</span>};
+        List&lt;<span class="keyword">String</span>&gt; list = Arrays.asList(strs);
+        list.stream().forEach((<span class="built_in">str</span>)-&gt;{System.out.<span class="built_in">println</span>(<span class="built_in">str</span>);});
+    }
+}
+</code></pre><p>这段代码完成的功能很简单：打印List中的每一个字符串。forEach方法签名如下：</p>
+<pre><code><span class="function"><span class="keyword">void</span> <span class="title">forEach</span><span class="params">(Consumer&lt;? <span class="keyword">super</span> T&gt; action)</span></span>;
+</code></pre><p>该方法接收一个Consumer对象，知道这一点，我们就很容易理解上面代码片段中的Lambda表达式了。(关于集合框架引入的stream以及forEach的相关内容，我会专门在另一篇文章中讨论)</p>
+<h1 id="5-方法引用">5.方法引用</h1><p>很多时候，当我们要将一个功能传递给其他代码，但是刚好有一些现有的方法能够实现这样的功能。我们完全没有必要写一个Lambda表达式，把这个已经的方法的实现逻辑再写一遍，我们直接把这个已有的方法传递过去不就好了吗？那么方法引用就提供了这样的便利性。在上面那个打印List中所有String元素的例子中，我们是这样实现的：</p>
+<pre><code>list.stream<span class="function"><span class="params">()</span>.<span class="title">forEach</span><span class="params">((str)-&gt;{System.out.println(str);})</span>;</span>
+</code></pre><p>我们完全可以使用方法引用来进一步简化代码：</p>
+<pre><code><span class="tag">list</span><span class="class">.stream</span>()<span class="class">.forEach</span>(<span class="rule"><span class="attribute">System.out</span>:<span class="value">:println)</span></span>;
+</code></pre><p>表达式<code>System.out::println</code>就是一个方法引用，他与<code>(str)-&gt;{System.out.println(str);}</code>在这里是等价的。</p>
+<p>方法引用主要有三种形式：</p>
+<pre><code>object::instanceMethod
+<span class="class"><span class="keyword">Class</span>::<span class="title">staticMethod</span></span>
+<span class="class"><span class="keyword">Class</span>::<span class="title">instanceMethod</span></span>
+</code></pre><p>在前两种情况下，方法引用都等价于给方法提供参数的Lambda表达式。比如<code>System.out::println</code>实际上相当于：</p>
+<pre><code>x -&gt; System<span class="class">.out</span><span class="class">.println</span>(x)
+</code></pre><p>第三种情况下，方法引用适用的第一个参数就变成方法的目标对象。比如<code>String::compareToIgnoreCase</code>实际上相当于：</p>
+<pre><code><span class="function"><span class="params">(x, y)</span> -&gt;</span> {x.compareToIgnoreCase(y)};
+</code></pre><p>方法引用可以使用<code>this</code>和<code>super</code>关键词。当使用<code>this::instanceMethod</code>实际上this指代的对象就成为了方法的目标对象(也就是在this上调用方法)。而<code>super::instanceMethod</code>则表示调用this对象父类所实现的方法版本。我们用代码来解释这个问题：</p>
+<pre><code><span class="class"><span class="keyword">class</span> <span class="title">Person</span> </span>{
+    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sayHello</span><span class="params">()</span> </span>{
+        System.out.println(<span class="string">"Hello!"</span>);
+    }
+}
+
+<span class="class"><span class="keyword">class</span> <span class="title">Student</span> <span class="keyword">extends</span> <span class="title">Person</span></span>{
+    <span class="annotation">@Override</span>
+    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sayHello</span><span class="params">()</span> </span>{
+        Thread thread = <span class="keyword">new</span> Thread(<span class="keyword">super</span>::sayHello);
+        thread.start();
+    }
+}
+
+<span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MethodReference</span> </span>{
+    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>{
+        Student student = <span class="keyword">new</span> Student();
+        student.sayHello();
+    }
+}
+</code></pre><p>这个例子的最终运行结果是<code>Hello!</code>。在子类Student的sayHello实现中，实际上是调用了父类对sayHello()的实现。为了能够使用方法引用，在Student类的sayHello中使用了线程。</p>
+<h1 id="6-构造器引用">6.构造器引用</h1><p>构造器也是一种方法，既然普通方法有方法引用，那么构造器自然也有自己的“方法引用”，称之为构造器应用。构造器引用与方法引用类似，但是构造器引用的方法名变成了<code>new</code>。我们直接举个例子。</p>
+<pre><code><span class="keyword">public</span> <span class="keyword">class</span> ConstructorReference {
+    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>{
+        String[] arr = <span class="keyword">new</span> String[]{<span class="string">"1"</span>, <span class="string">"2"</span>, <span class="string">"3"</span>};
+        List&lt;String&gt; <span class="built_in">list</span> = Arrays.asList(arr);
+        Stream&lt;Integer&gt; stream = <span class="built_in">list</span>.stream().<span class="built_in">map</span>(Integer::<span class="keyword">new</span>);
+        Integer[] integers = stream.toArray(Integer[]::<span class="keyword">new</span>);
+    }
+}
+</code></pre><p>这个例子将一个字符串形式表示的数字的列表转换成整型数组。Stream对象我会在另一篇文章中专门讲。</p>
+<p>map()方法原型如下：</p>
+<pre><code>&lt;R&gt; <span class="keyword">Stream&lt;R&gt; </span><span class="preprocessor">map</span>(<span class="preprocessor">Function</span>&lt;? super T, ? extends R&gt; mapper)<span class="comment">;</span>
+</code></pre><p>这个函数会对stream中的元素都应用Function，然后再返回这个结果Stream。Function函数接口代表一个接受一个参数T并且返回一个值R的函数。他有一个<code>R apply(T t)</code>方法。我们这里使用的构造器引用实际上等价于一个Function函数接口。对于Stream中的每一个元素，调用Integer的构造方法，并且将该元素作为参数传递进去。也就是对Stream中的每一个元素，执行下面代码：</p>
+<pre><code><span class="built_in">Integer</span> int <span class="subst">=</span> <span class="literal">new</span> <span class="built_in">Integer</span>(<span class="built_in">String</span> str);
+</code></pre><p>其中，str即是前面提到的Stream中的元素。</p>
+<h1 id="7-变量作用域">7.变量作用域</h1><p>Lambda表达式本身不具备自己的作用域，这一点和匿名内部类不一样。在Lambda表达式中定义的变量的作用域属于Lambda表达式所属的那个作用域。这句话多少有点拗口，我们依然通过一个例子来了解：</p>
+<pre><code><span class="keyword">public</span> void <span class="function"><span class="keyword">method</span><span class="params">()</span> <span class="comment">{
+    int i = 0;
+    Runnable r = () -&gt; {
+        int i = 0;    //编译错误，由于Lambda表达式没有自己的作用域，那么这个变量i和外层的i是会冲突的。
+    }</span> 
+}
+<span class="title">public</span> <span class="title">void</span> _<span class="title">method</span><span class="params">()</span> <span class="comment">{
+    int i = 0;
+    Runnable r = new Runnable() {
+        public void run() {
+            int i = 0;    //合法，匿名内部类是有自己的作用域的，内层的i与外层的i不会冲突。
+        }</span>
+    }
+}</span>
+</code></pre><p>也正是由于Lambda表达式没有自己的作用域，那么对于this和super的引用也就需要特别的留心。我们举一个例子：</p>
+<pre><code><span class="keyword">public</span> <span class="keyword">void</span> App {
+    <span class="keyword">public</span> <span class="keyword">static</span> <span class="function"><span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>{
+        Runnable r = () -&gt; {
+            <span class="keyword">this</span>.toString();
+        }
+    }
+}
+</code></pre><p>在这个例子中，this.toString()调用的是App对象的toString()。</p>
+<h1 id="8-default方法">8.default方法</h1><p>我们在前面已经多次提到了stream()方法。大家如果仔细的看Java 8的API文档会发现，这个stream方法实际上是定义在Collection接口中的。大家肯定会有一个疑问，在Java 8以前的版本中，Collection接口是没有这个方法的。也就是说，Java 8 在这个集合的顶层接口中添加的了新的方法。那么就会有一个疑问，老的代码能否在Java 8上运行呢？我们知道，接口中的方法都是抽象方法，老的实现了Collection接口的类在Java 8上显然会由于没有实现新加入的类似stream的方法而导致编译错误。实际上Java的设计者肯定在我们之前想到这个问题。他们采用的解决办法是引入default方法。也就是说，允许在接口中提供某些方法的具体实现，也就是说接口中的方法一旦声明为default就不再是abstract的。这样，在新版的Java Collection接口中，Java设计和实现着，通过这种机制，为新引入的stream方法提供具体的实现，即可解决上面我们提到的问题。我们可以写一段示例代码来演示一下这个问题：</p>
+<pre><code><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">DefaultMethodIntf</span> </span>{
+    <span class="function"><span class="keyword">default</span> <span class="keyword">void</span> <span class="title">stream</span><span class="params">()</span> </span>{
+        System.out.println(<span class="string">"Hello, I'm a new default method"</span>);
+    }
+    <span class="function"><span class="keyword">void</span> <span class="title">sayHello</span><span class="params">()</span></span>;
+}
+<span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DefaultMethod</span> <span class="keyword">implements</span> <span class="title">DefaultMethodIntf</span></span>{
+    <span class="annotation">@Override</span>
+    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sayHello</span><span class="params">()</span> </span>{
+        System.out.println(<span class="string">"sayHello method"</span>);
+    }
+}
+</code></pre><p>在这个例子中，DefaultMethod类实现了DefaultMethodIntf接口，但是完全没必要复写stream()，因为接口已经通过定义default方法的形式给出了具体的实现。怎么样，是不是还挺妙的。这样的话，以后的代码就不需要采用Interface-&gt;Abstract Class-&gt;Concrete Class的模式了。</p>
+<p>另外，在普通的类中是不允许定义default方法的，因为就没这个必要嘛。</p>
+<p>当接口中引入default方法，问题也会随之而来。现在我们有下面的类和接口：</p>
+<pre><code><span class="keyword">class</span> <span class="title">SuperClass</span> {
+    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">sayHello</span>(<span class="params"></span>) </span>{
+        System.<span class="keyword">out</span>.println(<span class="string">"Person.sayHello"</span>);
+    }
+}
+<span class="keyword">interface</span> <span class="title">DefaultInterface</span> {
+    <span class="function"><span class="keyword">default</span> <span class="keyword">void</span> <span class="title">sayHello</span>(<span class="params"></span>) </span>{
+        System.<span class="keyword">out</span>.println(<span class="string">"DefaultInterface.sayHello"</span>);
+    }
+}
+</code></pre><p>当一个类同时集成SuperClass并且实现DefaultInterface，那么该类中的sayHello会有怎样的行为呢？这实际上是Java 8中的多重继承问题。在Java 8中多重继承有两条重要的判定规则：</p>
+<ul>
+<li>父类优先。当父类提供了一个方法实现，那么接口中同名同参数的default方法会被忽略。</li>
+<li>接口冲突。当一个接口提供了一个default方法，而另一个接口有一个同名同参数类型的方法(不论是否default方法)，子类同时实现这两个接口时，需要复写该方法。</li>
+</ul>
+<p>有了第一条规则，上面的例子的执行结果很明显是<code>Person.sayHello</code>。</p>
+<h1 id="9-_接口静态方法">9. 接口静态方法</h1><p>Java 8中允许给接口添加静态方法。在以前的Java版本中，有很多类似于Collection接口和Collections类的成对组合，前者是接口，后者是一个包含一堆静态方法的工具类，而这些静态方法的参数往往就是接口。而在Java 8中，接口可以直接提供静态方法，这样很多时候就不必专门提供类似Collections这样的工具类，而是直接将这种静态方法放在Collection中，这样，代码的可读性会更好。</p>
+<p>以上基本上是Java 8中与Lambda表达式相关的一些新特性。算是我最近阅读一些文档和材料的一份笔记。记录下来，备忘。</p>
+<h1 id="参考文献">参考文献</h1><blockquote>
+<p>1.<a href="http://www.amazon.com/Java-SE-8-Really-Impatient/dp/0321927761" target="_blank" rel="external">Java SE 8 for the Really Impatient</a></p>
+<p>这是一本讲述Java 8 新特性的书，可能也是目前唯一的成体系的讲解Java 8新特性的书籍。内容非常全面，里面讲解新特性的例子非常的妙，简短但是又很有说服力。本文中的很多例子都来自这本书。并且归纳出了很多新特性需要注意的地方。另外，作者Cay S. Horstmann就是大名鼎鼎的《Core Java》的作者之一。</p>
+<p>2.<a href="http://www.angelikalanger.com/Lambdas/Lambdas.pdf" target="_blank" rel="external">Lambda Expressions in Java Tutorial</a></p>
+<p>这是一个培训机构的一份指导书，侧重于讲解Java 8中的Lambda表达式，本文中关于Lambda表达式的存在形式以及开头的例子都来源于该文献。</p>
+<p>3.<a href="http://docs.oracle.com/javase/8/docs/api/index.html" target="_blank" rel="external">Java 8 API Doc</a></p>
+<p>4.<a href="http://docs.oracle.com/javase/tutorial/" target="_blank" rel="external">The Java Tutorial</a></p>
+<p>官方的指导教材，目前已经针对Java 8作了全面的更新，优点是官方出品，权威，全面。缺点是讲解Lambda表达式新特性时，混合着很多关于Stream的内容，非常不利于新手快速了解新特性，并且语言也相对晦涩。</p>
+<p>5.<a href="http://codingblogs.net/2014/03/27/java8newfeature/">Java 8新特性</a></p>
+<p>官方Java 8新特性列表的中文版。</p>
+</blockquote>
+  
+	</div>
+		<footer class="article-footer clearfix">
+<div class="article-catetags">
+
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/Java-8/">Java 8</a><a href="/tags/Lambda-Expression/">Lambda Expression</a>
+  </div>
+
+</div>
+
+
+
+	<div class="article-share" id="share">
+	
+	<div class="share-jiathis">
+	  
+<div class="jiathis_style_24x24">
+	<a class="jiathis_button_tsina"></a>
+	<a class="jiathis_button_weixin"></a>
+	<a class="jiathis_button_renren"></a>
+	<a class="jiathis_button_qzone"></a>
+	<a class="jiathis_button_googleplus"></a>
+	<a class="jiathis_button_douban"></a>
+	<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+	<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+    var jiathis_config={
+    data_track_clickback:true,
+    sm:"copy,renren,cqq",
+    pic:"",
+    summary:"",
+    
+  </script> 
+<script type="text/javascript" src="//v3.jiathis.com/code/jia.js?uid=
+1358166128571307" charset="utf-8"></script>      
+
+	 </div>
+	
+	</div>
+
+
+</footer>
+
+   	       
+	</article>
+	
+<nav class="article-nav clearfix">
+ 
+ <div class="prev" >
+ <a href="/2014/09/19/Stream-API-in-Java-8/" title="Stream API in Java 8">
+  <strong>上一篇：</strong><br/>
+  <span>
+  Stream API in Java 8</span>
+</a>
+</div>
+
+
+<div class="next">
+<a href="/2014/09/19/Java-8-new-features/"  title="Java 8 new features">
+ <strong>下一篇：</strong><br/> 
+ <span>Java 8 new features
+</span>
+</a>
+</div>
+
+</nav>
+
+	
+<section id="comments" class="comment">
+	<div class="ds-thread" data-thread-key="2014/09/19/Lambda-Expression-in-Java-8/" data-title="Lambda Expression in Java 8" data-url="http://codingblogs.net/2014/09/19/Lambda-Expression-in-Java-8/"></div>
+</section>
+
+
+</div>  
+      <div class="openaside"><a class="navbutton" href="#" title="显示侧边栏"></a></div>
+
+  <div id="toc" class="toc-aside">
+  <strong class="toc-title">文章目录</strong>
+ 
+ <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-为什么引入Lambda表达式"><span class="toc-number">1.</span> <span class="toc-text">1.为什么引入Lambda表达式</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-Lambda表达式语法"><span class="toc-number">2.</span> <span class="toc-text">2.Lambda表达式语法</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-Java中的Lambda表达式的存在形式"><span class="toc-number">3.</span> <span class="toc-text">3.Java中的Lambda表达式的存在形式</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-函数接口"><span class="toc-number">4.</span> <span class="toc-text">4.函数接口</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-方法引用"><span class="toc-number">5.</span> <span class="toc-text">5.方法引用</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-构造器引用"><span class="toc-number">6.</span> <span class="toc-text">6.构造器引用</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#7-变量作用域"><span class="toc-number">7.</span> <span class="toc-text">7.变量作用域</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#8-default方法"><span class="toc-number">8.</span> <span class="toc-text">8.default方法</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#9-_接口静态方法"><span class="toc-number">9.</span> <span class="toc-text">9. 接口静态方法</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#参考文献"><span class="toc-number">10.</span> <span class="toc-text">参考文献</span></a></li></ol>
+ 
+  </div>
+
+<div id="asidepart">
+<div class="closeaside"><a class="closebutton" href="#" title="隐藏侧边栏"></a></div>
+<aside class="clearfix">
+
+  
+
+  
+<div class="tagslist">
+	<p class="asidetitle">标签</p>
+		<ul class="clearfix">
+		
+			
+				<li><a href="/tags/Java-8/" title="Java 8">Java 8<sup>4</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Datetime-API/" title="Datetime API">Datetime API<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/webkit2png/" title="webkit2png">webkit2png<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Stream-API/" title="Stream API">Stream API<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Lambda-Expression/" title="Lambda Expression">Lambda Expression<sup>1</sup></a></li>
+			
+		
+		</ul>
+</div>
+
+
+  
+  <div class="archiveslist">
+    <p class="asidetitle"><a href="/archives">归档</a></p>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/09/">九月 2014</a><span class="archive-list-count">5</span></li></ul>
+  </div>
+
+
+  <div class="rsspart">
+	<a href="/atom.xml" target="_blank" title="rss">RSS 订阅</a>
+</div>
+
+  <div class="weiboshow">
+  <p class="asidetitle">新浪微博</p>
+    <iframe width="100%" height="119" class="share_self"  frameborder="0" scrolling="no" src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=119&fansRow=2&ptype=1&speed=0&skin=9&isTitle=1&noborder=1&isWeibo=0&isFans=0&uid=1281765830&verifier=b65df5a4&dpc=1"></iframe>
+</div>
+
+
+</aside>
+</div>
+    </div>
+    <footer><div id="footer" >
+	
+	<div class="line">
+		<span></span>
+		<div class="author"></div>
+	</div>
+	
+	
+	<section class="info">
+		<p> Hello ,I&#39;m wawlian in ifeng.com. <br/>
+			This is my blog,believe it or not.</p>
+	</section>
+	 
+	<div class="social-font" class="clearfix">
+		
+		<a href="http://weibo.com/wawlian" target="_blank" class="icon-weibo" title="微博"></a>
+		
+		
+		<a href="https://github.com/wawlian" target="_blank" class="icon-github" title="github"></a>
+		
+		
+		<a href="http://stackoverflow.com/users/wawlian" target="_blank" class="icon-stack-overflow" title="stackoverflow"></a>
+		
+		
+		<a href="https://twitter.com/wawlian" target="_blank" class="icon-twitter" title="twitter"></a>
+		
+		
+		<a href="https://www.facebook.com/wawlian0" target="_blank" class="icon-facebook" title="facebook"></a>
+		
+		
+		
+		<a href="https://www.douban.com/people/61799727" target="_blank" class="icon-douban" title="豆瓣"></a>
+		
+		
+		<a href="http://www.zhihu.com/people/wawlian" target="_blank" class="icon-zhihu" title="知乎"></a>
+		
+		
+		<a href="https://plus.google.com/104724126254137490000?rel=author" target="_blank" class="icon-google_plus" title="Google+"></a>
+		
+		
+		<a href="mailto:xiongfeng0601@gmail.com" target="_blank" class="icon-email" title="Email Me"></a>
+		
+	</div>
+			
+		
+
+		<p class="copyright">
+		Powered by <a href="http://hexo.io" target="_blank" title="hexo">hexo</a> and Theme by <a href="https://github.com/wuchong/jacman" target="_blank" title="Jacman">Jacman</a> © 2015 
+		
+		<a href="/about" target="_blank" title="wawlian">wawlian</a>
+		
+		
+		</p>
+</div>
+</footer>
+    <script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/jquery.qrcode-0.12.0.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.navbar').click(function(){
+    $('header nav').toggleClass('shownav');
+  });
+  var myWidth = 0;
+  function getSize(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+  };
+  var m = $('#main'),
+      a = $('#asidepart'),
+      c = $('.closeaside'),
+      o = $('.openaside');
+  c.click(function(){
+    a.addClass('fadeOut').css('display', 'none');
+    o.css('display', 'block').addClass('fadeIn');
+    m.addClass('moveMain');
+  });
+  o.click(function(){
+    o.css('display', 'none').removeClass('beforeFadeIn');
+    a.css('display', 'block').removeClass('fadeOut').addClass('fadeIn');      
+    m.removeClass('moveMain');
+  });
+  $(window).scroll(function(){
+    o.css("top",Math.max(80,260-$(this).scrollTop()));
+  });
+  
+  $(window).resize(function(){
+    getSize(); 
+    if (myWidth >= 1024) {
+      $('header nav').removeClass('shownav');
+    }else{
+      m.removeClass('moveMain');
+      a.css('display', 'block').removeClass('fadeOut');
+      o.css('display', 'none');
+      
+      $('#toc.toc-aside').css('display', 'none');
+        
+    }
+  });
+});
+</script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var ai = $('.article-content>iframe'),
+      ae = $('.article-content>embed'),
+      t  = $('#toc'),
+      ta = $('#toc.toc-aside'),
+      o  = $('.openaside'),
+      c  = $('.closeaside');
+  if(ai.length>0){
+    ai.wrap('<div class="video-container" />');
+  };
+  if(ae.length>0){
+   ae.wrap('<div class="video-container" />');
+  };
+  c.click(function(){
+    ta.css('display', 'block').addClass('fadeIn');
+  });
+  o.click(function(){
+    ta.css('display', 'none');
+  });
+  $(window).scroll(function(){
+    ta.css("top",Math.max(140,320-$(this).scrollTop()));
+  });
+});
+</script>
+
+
+
+
+<script type="text/javascript">
+  var duoshuoQuery = {short_name:"wawlian"};
+  (function() {
+    var ds = document.createElement('script');
+    ds.type = 'text/javascript';ds.async = true;
+    ds.src = '//static.duoshuo.com/embed.js';
+    ds.charset = 'UTF-8';
+    (document.getElementsByTagName('head')[0] 
+    || document.getElementsByTagName('body')[0]).appendChild(ds);
+  })();
+</script> 
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.article-content').each(function(i){
+    $(this).find('img').each(function(){
+      if ($(this).parent().hasClass('fancybox')) return;
+      var alt = this.alt;
+      if (alt) $(this).after('<span class="caption">' + alt + '</span>');
+      $(this).wrap('<a href="' + this.src + '" title="' + alt + '" class="fancybox"></a>');
+    });
+    $(this).find('.fancybox').each(function(){
+      $(this).attr('rel', 'article' + i);
+    });
+  });
+  if($.fancybox){
+    $('.fancybox').fancybox();
+  }
+}); 
+</script>
+
+
+
+<!-- Analytics Begin -->
+
+
+
+
+
+<!-- Analytics End -->
+
+<!-- Totop Begin -->
+
+	<div id="totop">
+	<a title="返回顶部"><img src="/img/scrollup.png"/></a>
+	</div>
+	<script src="/js/totop.js"></script>
+
+<!-- Totop End -->
+
+<!-- MathJax Begin -->
+<!-- mathjax config similar to math.stackexchange -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+<!-- MathJax End -->
+
+<!-- Tiny_search Begin -->
+
+<!-- Tiny_search End -->
+
+  </body>
+</html>

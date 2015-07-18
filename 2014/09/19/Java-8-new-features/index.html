@@ -1,0 +1,621 @@
+
+ <!DOCTYPE HTML>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  
+    <title>Java 8 new features | wawlian说</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no">
+    
+    <meta name="author" content="wawlian">
+    
+
+    
+    <meta name="description" content="原文地址：What’s New in JDK 8
+仅仅是方便大家了解JDK8有哪些新特性。并非100%逐字翻译，特别第四部分。
+
+1.Java语言
+Lambda表达式
+
+这个版本的JDK中引入了新的语言特性——lambda表达式。lambda表达式允许我们将功能作为参数传递给方法，也就是所谓的“代码即是数据”。lambda表达式允许我们更加紧凑的表达那些只含有一个方法的接口的实例(也就是函数接口)">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java 8 new features">
+<meta property="og:url" content="http://codingblogs.net/2014/09/19/Java-8-new-features/index.html">
+<meta property="og:site_name" content="wawlian说">
+<meta property="og:description" content="原文地址：What’s New in JDK 8
+仅仅是方便大家了解JDK8有哪些新特性。并非100%逐字翻译，特别第四部分。
+
+1.Java语言
+Lambda表达式
+
+这个版本的JDK中引入了新的语言特性——lambda表达式。lambda表达式允许我们将功能作为参数传递给方法，也就是所谓的“代码即是数据”。lambda表达式允许我们更加紧凑的表达那些只含有一个方法的接口的实例(也就是函数接口)">
+<meta property="og:updated_time" content="2015-07-18T14:01:02.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Java 8 new features">
+<meta name="twitter:description" content="原文地址：What’s New in JDK 8
+仅仅是方便大家了解JDK8有哪些新特性。并非100%逐字翻译，特别第四部分。
+
+1.Java语言
+Lambda表达式
+
+这个版本的JDK中引入了新的语言特性——lambda表达式。lambda表达式允许我们将功能作为参数传递给方法，也就是所谓的“代码即是数据”。lambda表达式允许我们更加紧凑的表达那些只含有一个方法的接口的实例(也就是函数接口)">
+<meta name="twitter:creator" content="@wawlian">
+<link rel="publisher" href="104724126254137490000">
+
+    
+    <link rel="alternative" href="/atom.xml" title="wawlian说" type="application/atom+xml">
+    
+    
+    <link rel="icon" href="/img/favicon.ico">
+    
+    
+    <link rel="apple-touch-icon" href="/img/jacman.jpg">
+    <link rel="apple-touch-icon-precomposed" href="/img/jacman.jpg">
+    
+    <link rel="stylesheet" href="/css/style.css" type="text/css">
+</head>
+
+  <body>
+    <header>
+      
+<div>
+		
+			<div id="textlogo">
+				<h1 class="site-name"><a href="/" title="wawlian说">wawlian说</a></h1>
+				<h2 class="blog-motto"></h2>
+			</div>
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="菜单">
+			</a></div>
+			<nav class="animated">
+				<ul>
+					<ul>
+					 
+						<li><a href="/">首页</a></li>
+					
+						<li><a href="/archives">归档</a></li>
+					
+					<li>
+ 					
+					<form class="search" action="//google.com/search" method="get" accept-charset="utf-8">
+						<label>Search</label>
+						<input type="search" id="search" name="q" autocomplete="off" maxlength="20" placeholder="搜索" />
+						<input type="hidden" name="q" value="site:codingblogs.net">
+					</form>
+					
+					</li>
+				</ul>
+			</nav>			
+</div>
+    </header>
+    <div id="container">
+      <div id="main" class="post" itemscope itemprop="blogPost">
+  
+	<article itemprop="articleBody"> 
+		<header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2014/09/19/Java-8-new-features/" title="Java 8 new features" itemprop="url">Java 8 new features</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="https://plus.google.com/104724126254137490000?rel=author" title="wawlian" target="_blank" itemprop="author">wawlian</a>
+		
+  <p class="article-time">
+    <time datetime="2014-09-19T11:19:35.000Z" itemprop="datePublished"> 发表于 2014-09-19</time>
+    
+  </p>
+</header>
+	<div class="article-content">
+		
+		<blockquote>
+<p>原文地址：<a href="http://www.oracle.com/technetwork/java/javase/8-whats-new-2157071.html" target="_blank" rel="external">What’s New in JDK 8</a></p>
+<p>仅仅是方便大家了解JDK8有哪些新特性。并非100%逐字翻译，特别第四部分。</p>
+</blockquote>
+<h1 id="1-Java语言">1.Java语言</h1><ul>
+<li><code>Lambda</code>表达式</li>
+</ul>
+<p>这个版本的JDK中引入了新的语言特性——<code>lambda</code>表达式。<code>lambda</code>表达式允许我们将功能作为参数传递给方法，也就是所谓的“代码即是数据”。<code>lambda</code>表达式允许我们更加紧凑的表达那些只含有一个方法的接口的实例(也就是函数接口)。</p>
+<ul>
+<li>方法引用</li>
+</ul>
+<p>方法引用可以为已经有名字的方法提供更加便于阅读的<code>lambda</code>表达式。</p>
+<ul>
+<li>默认方法</li>
+</ul>
+<p>默认方法允许往类库中的接口添加新的方法并且保证与老版本的代码二进制兼容。</p>
+<ul>
+<li>重复注解 </li>
+</ul>
+<p>允许对一个声明或者类型使用同样的注解多次。</p>
+<ul>
+<li>类型注解</li>
+</ul>
+<p>允许不仅仅在类型声明的时候使用注解，而是可以在所有类型出现的地方使用注解。该特性配合插件式的类型系统使用，可以提升代码的类型检查能力。</p>
+<ul>
+<li>增强的类型推断 </li>
+</ul>
+<ul>
+<li>方法参数反射 </li>
+</ul>
+<h1 id="2-集合框架">2.集合框架</h1><ul>
+<li>java.util.stream </li>
+</ul>
+<p>对集合对象的<code>stream</code>进行函数式操作。<code>stream</code>API被集成进了<code>collection</code>API，允许对集合对象进行批量操作。例如对集合进行顺序或者并行的<code>map-reduce</code>变换。</p>
+<ul>
+<li>HashMap性能提升。(当key出现碰撞)</li>
+</ul>
+<h1 id="3-Compact_Profiles">3.Compact Profiles</h1><p>提供了一组预定义的JavaSE的子集，方便一些小设备上不需要引用一整套的Java平台。<a href="http://docs.oracle.com/javase/8/docs/technotes/guides/compactprofiles/" target="_blank" rel="external">Compact Profiles</a></p>
+<h1 id="4-安全">4.安全</h1><ul>
+<li>默认支持客户端TLS1.2</li>
+<li>添加一个新的<code>AccessController.doPrivileged</code>变种。</li>
+<li>更强的加密算法。</li>
+<li>在<code>JSSE Server</code>中支持<code>SSL/TLS Server Name Indication (SNI)</code>扩展</li>
+<li>支持<code>AEAD</code>算法。</li>
+<li><code>KeyStore</code>增强，包括新的<code>Domain KeyStore</code>类型<code>java.security.DomainLoadStoreParameter</code>，以及keystore工具的心命令行选项<code>-importpassword</code></li>
+<li><code>SHA-224</code>消息摘要</li>
+<li>加强支持<code>NSA Suite B密码</code></li>
+<li>更好的支持高熵随机数生成。</li>
+<li>新的<code>java.security.cert.PKIXRevocationChecker</code>类</li>
+<li>Windows下64位PKCS11</li>
+<li><code>Kerberos 5 Replay Caching</code>中新的rcache类型。</li>
+<li>支持<code>Kerberos 5 Protocol Transition</code></li>
+<li>默认关闭<code>Kerberos 5 weak encryption</code></li>
+<li><code>Unbound SASL for the GSS-API/Kerberos 5 mechanism</code></li>
+<li><code>SASL service for multiple host names</code></li>
+<li>MacOS下的与本地JGSS的JNI桥接</li>
+<li>在<code>SunJSSE provider</code>中支持更强的<code>ephemeral DH keys</code></li>
+<li>在<code>JSSE</code>中支持服务器端自定义<code>cipher suites preference</code></li>
+</ul>
+<h1 id="5-JavaFX">5.JavaFX</h1><ul>
+<li>全新的<code>Modena</code>主题。详见<a href="http://fxexperience.com/2013/03/modena-theme-update/" target="_blank" rel="external">fxexperience.com</a></li>
+<li><code>SwingNode</code>类允许在JavaFX中嵌入Swing的内容。详见<a href="http://docs.oracle.com/javase/8/javafx/api/javafx/embed/swing/SwingNode.html" target="_blank" rel="external">SwingNode API</a>和<a href="http://docs.oracle.com/javase/8/javafx/interoperability-tutorial/embed-swing.htm" target="_blank" rel="external">Embedding Swing Content in JavaFX Applications</a></li>
+<li>新的控件<code>DatePicker</code>和<code>TreeTableView</code></li>
+<li>新的<code>javafx.print</code>包提供打印API</li>
+<li>3D图形图像功能提升。</li>
+<li><code>WebView</code>类提供新的特性以及一些提升。关于对HTML5 websocket，web worker以及web fonts的支持，详见<a href="http://docs.oracle.com/javase/8/javafx/embedded-browser-tutorial/index.html" target="_blank" rel="external">Supported Features of HTML5</a></li>
+<li>增强文本支持，包括双向文字支持，空间中对复杂文本例如泰语和印地文的支持，以及在Text Node中支持多行多样式文本。</li>
+<li>高清显示支持。</li>
+<li>所有CSS Styleable类变成共有API，详见<a href="http://docs.oracle.com/javase/8/javafx/api/javafx/css/package-frame.html" target="_blank" rel="external">javafx.css</a></li>
+<li>全新的<code>ScheduledService</code>类允许自动重启服务。</li>
+<li>JavaFX支持ARM平台。</li>
+</ul>
+<h1 id="6-工具">6.工具</h1><ul>
+<li><code>jjs</code>指令用来调用<code>Nashorn</code>引擎。</li>
+<li><code>java</code>命令可以启动JavaFX应用。</li>
+<li><code>java</code>man page重写了。</li>
+<li><code>jdeps</code>命令可以用来分析class文件。</li>
+<li><code>Java Management Extensions(JMX)</code>可以远程访问诊断命令。</li>
+<li><code>jarsigner</code>时间签名</li>
+<li><p><code>javac</code>工具：</p>
+<ul>
+<li><code>-parameters</code>选项可以存储正式的参数名，并且允许反射API访问这些参数名。</li>
+<li>JLS 15.23一节中描述的<code>equality operation</code>类型规则，javac可以正确强制执行。</li>
+<li>使用<code>-Xdoclint</code>选项，javac命令可以检查文档注释的内容。详情参阅<code>javac -X</code>,同样javadoc命令默认也会开启该功能。</li>
+<li>javac工具提供新的选项<code>-h</code>可以根据需要生成本地头文件。该选项需要制定一个目录，用于存储生成的头文件。可以为任意含有native方法或者新的<code>java.lang.annotation.Native</code>注解类型声明的常量的类生成头文件。</li>
+</ul>
+</li>
+<li><p><code>Javadoc</code>工具 </p>
+<ul>
+<li>javadoc 工具支持全新的<code>DocTree</code>API，允许按照抽象的语法树来遍历文档注释</li>
+<li>javadoc 工具支持全新的<code>Javadoc Access API</code>，允许在应用中直接调用javadoc而不用新启动一个进程。</li>
+<li>javadoc 目前可以检查Java文档注释的内容。</li>
+</ul>
+</li>
+</ul>
+<h1 id="7-国际化">7.国际化</h1><ul>
+<li>加强Unicode支持，支持Unicode 6.2.0。 </li>
+<li>采用Unicode CLDR Data，提供 java.locale.providers系统属性。</li>
+<li>新的Calendar和Locale API</li>
+<li>允许安装自定义的Resource Bundle作为扩展。</li>
+</ul>
+<h1 id="8-部署">8.部署</h1><ul>
+<li>Applet和Java Web Start应用可以使用<code>URLPermission</code>与启动该应用的后端服务建立连接。<code>SocketPermission</code>不再使用。</li>
+<li>所有安全级别的jar包中的manifest文件中都需要提供<code>Permissions</code>属性。</li>
+</ul>
+<h1 id="9-全新的DateTime_API">9.全新的DateTime API</h1><p>一组新的Java包来支持一个复杂的date-time模型。</p>
+<h1 id="10-脚本">10.脚本</h1><ul>
+<li>Nashorn js脚本引擎</li>
+</ul>
+<h1 id="11-Pack200">11.Pack200</h1><ul>
+<li>提供JSR 292提出的Pack200支持。</li>
+<li>支持JSR-292, JSR-308 and JSR-335标准提到的class文件变化。</li>
+</ul>
+<h1 id="12-_IO_and_NIO">12. IO and NIO</h1><ul>
+<li>为Solaries提供新的SelectorProvider实现</li>
+<li>缩小 <code>&lt;JDK_HOME&gt;/jre/lib/charsets.jar</code> 文件大小。</li>
+<li><code>java.lang.String(byte[], *)</code> 和 <code>java.lang.String.getBytes()</code> 性能提升</li>
+</ul>
+<h1 id="13-java-lang_和_java-util_包">13.<code>java.lang</code> 和 <code>java.util</code> 包</h1><ul>
+<li>并行数组排序</li>
+<li>标准Base64编解码</li>
+<li>无符号运算支持</li>
+</ul>
+<h1 id="14-JDBC">14.JDBC</h1><ul>
+<li>移除<code>JDBC-ODBC</code>桥接</li>
+<li><code>JDBC 4.2</code>新特性。</li>
+</ul>
+<h1 id="15-Java_DB新版本">15.Java DB新版本</h1><h1 id="16-网络">16.网络</h1><ul>
+<li>添加<code>java.net.URLPermission</code></li>
+<li>如果在<code>java.net.HttpURLConnection</code>中已经安装了security manager，那么请求建立连接需要权限验证。(不介绍)</li>
+</ul>
+<h1 id="17-并发">17.并发</h1><ul>
+<li><code>java.util.concurrent</code>包中有新的类和接口引入。</li>
+<li><code>java.util.concurrent.ConcurrentHashMap</code>类中添加了新方法，用于在新的stream api和lambda表达式的基础上提供聚合操作。</li>
+<li><code>java.util.concurrent.atomic</code>包中引入了新的类来支持<code>scalable updatable variables</code></li>
+<li><code>java.util.concurrent.ForkJoinPool</code>中添加了新方法来支持通用池。</li>
+<li>引入<code>java.util.concurrent.locks.StampedLock</code>类，提供三种基于锁的读写访问。</li>
+</ul>
+<h1 id="18-Java_XML_-_JAXP">18.Java XML - JAXP</h1><h1 id="19-_Hotspot虚拟机">19. Hotspot虚拟机</h1><ul>
+<li><code>Advanced Encryption Standard (AES)</code>支持 <code>-XX:+UseAES -XX:+UseAESIntrinsics</code> <code>-XX:-UseAES -XX:-UseAESIntrinsics</code></li>
+<li>移除永久区<code>PermGen</code></li>
+<li>方法调用的字节码指令上支持Java语言新引入的默认方法。</li>
+</ul>
+<h1 id="20-Java_Mission_Control_5-3">20.Java Mission Control 5.3</h1>  
+	</div>
+		<footer class="article-footer clearfix">
+<div class="article-catetags">
+
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/Java-8/">Java 8</a>
+  </div>
+
+</div>
+
+
+
+	<div class="article-share" id="share">
+	
+	<div class="share-jiathis">
+	  
+<div class="jiathis_style_24x24">
+	<a class="jiathis_button_tsina"></a>
+	<a class="jiathis_button_weixin"></a>
+	<a class="jiathis_button_renren"></a>
+	<a class="jiathis_button_qzone"></a>
+	<a class="jiathis_button_googleplus"></a>
+	<a class="jiathis_button_douban"></a>
+	<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+	<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+    var jiathis_config={
+    data_track_clickback:true,
+    sm:"copy,renren,cqq",
+    pic:"",
+    summary:"",
+    
+  </script> 
+<script type="text/javascript" src="//v3.jiathis.com/code/jia.js?uid=
+1358166128571307" charset="utf-8"></script>      
+
+	 </div>
+	
+	</div>
+
+
+</footer>
+
+   	       
+	</article>
+	
+<nav class="article-nav clearfix">
+ 
+ <div class="prev" >
+ <a href="/2014/09/19/Lambda-Expression-in-Java-8/" title="Lambda Expression in Java 8">
+  <strong>上一篇：</strong><br/>
+  <span>
+  Lambda Expression in Java 8</span>
+</a>
+</div>
+
+
+</nav>
+
+	
+<section id="comments" class="comment">
+	<div class="ds-thread" data-thread-key="2014/09/19/Java-8-new-features/" data-title="Java 8 new features" data-url="http://codingblogs.net/2014/09/19/Java-8-new-features/"></div>
+</section>
+
+
+</div>  
+      <div class="openaside"><a class="navbutton" href="#" title="显示侧边栏"></a></div>
+
+  <div id="toc" class="toc-aside">
+  <strong class="toc-title">文章目录</strong>
+ 
+ <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Java语言"><span class="toc-number">1.</span> <span class="toc-text">1.Java语言</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-集合框架"><span class="toc-number">2.</span> <span class="toc-text">2.集合框架</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-Compact_Profiles"><span class="toc-number">3.</span> <span class="toc-text">3.Compact Profiles</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-安全"><span class="toc-number">4.</span> <span class="toc-text">4.安全</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-JavaFX"><span class="toc-number">5.</span> <span class="toc-text">5.JavaFX</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-工具"><span class="toc-number">6.</span> <span class="toc-text">6.工具</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#7-国际化"><span class="toc-number">7.</span> <span class="toc-text">7.国际化</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#8-部署"><span class="toc-number">8.</span> <span class="toc-text">8.部署</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#9-全新的DateTime_API"><span class="toc-number">9.</span> <span class="toc-text">9.全新的DateTime API</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#10-脚本"><span class="toc-number">10.</span> <span class="toc-text">10.脚本</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#11-Pack200"><span class="toc-number">11.</span> <span class="toc-text">11.Pack200</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#12-_IO_and_NIO"><span class="toc-number">12.</span> <span class="toc-text">12. IO and NIO</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#13-java-lang_和_java-util_包"><span class="toc-number">13.</span> <span class="toc-text">13.java.lang 和 java.util 包</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#14-JDBC"><span class="toc-number">14.</span> <span class="toc-text">14.JDBC</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#15-Java_DB新版本"><span class="toc-number">15.</span> <span class="toc-text">15.Java DB新版本</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#16-网络"><span class="toc-number">16.</span> <span class="toc-text">16.网络</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#17-并发"><span class="toc-number">17.</span> <span class="toc-text">17.并发</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#18-Java_XML_-_JAXP"><span class="toc-number">18.</span> <span class="toc-text">18.Java XML - JAXP</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#19-_Hotspot虚拟机"><span class="toc-number">19.</span> <span class="toc-text">19. Hotspot虚拟机</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#20-Java_Mission_Control_5-3"><span class="toc-number">20.</span> <span class="toc-text">20.Java Mission Control 5.3</span></a></li></ol>
+ 
+  </div>
+
+<div id="asidepart">
+<div class="closeaside"><a class="closebutton" href="#" title="隐藏侧边栏"></a></div>
+<aside class="clearfix">
+
+  
+
+  
+<div class="tagslist">
+	<p class="asidetitle">标签</p>
+		<ul class="clearfix">
+		
+			
+				<li><a href="/tags/Java-8/" title="Java 8">Java 8<sup>4</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Datetime-API/" title="Datetime API">Datetime API<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/webkit2png/" title="webkit2png">webkit2png<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Stream-API/" title="Stream API">Stream API<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Lambda-Expression/" title="Lambda Expression">Lambda Expression<sup>1</sup></a></li>
+			
+		
+		</ul>
+</div>
+
+
+  
+  <div class="archiveslist">
+    <p class="asidetitle"><a href="/archives">归档</a></p>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/09/">九月 2014</a><span class="archive-list-count">5</span></li></ul>
+  </div>
+
+
+  <div class="rsspart">
+	<a href="/atom.xml" target="_blank" title="rss">RSS 订阅</a>
+</div>
+
+  <div class="weiboshow">
+  <p class="asidetitle">新浪微博</p>
+    <iframe width="100%" height="119" class="share_self"  frameborder="0" scrolling="no" src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=119&fansRow=2&ptype=1&speed=0&skin=9&isTitle=1&noborder=1&isWeibo=0&isFans=0&uid=1281765830&verifier=b65df5a4&dpc=1"></iframe>
+</div>
+
+
+</aside>
+</div>
+    </div>
+    <footer><div id="footer" >
+	
+	<div class="line">
+		<span></span>
+		<div class="author"></div>
+	</div>
+	
+	
+	<section class="info">
+		<p> Hello ,I&#39;m wawlian in ifeng.com. <br/>
+			This is my blog,believe it or not.</p>
+	</section>
+	 
+	<div class="social-font" class="clearfix">
+		
+		<a href="http://weibo.com/wawlian" target="_blank" class="icon-weibo" title="微博"></a>
+		
+		
+		<a href="https://github.com/wawlian" target="_blank" class="icon-github" title="github"></a>
+		
+		
+		<a href="http://stackoverflow.com/users/wawlian" target="_blank" class="icon-stack-overflow" title="stackoverflow"></a>
+		
+		
+		<a href="https://twitter.com/wawlian" target="_blank" class="icon-twitter" title="twitter"></a>
+		
+		
+		<a href="https://www.facebook.com/wawlian0" target="_blank" class="icon-facebook" title="facebook"></a>
+		
+		
+		
+		<a href="https://www.douban.com/people/61799727" target="_blank" class="icon-douban" title="豆瓣"></a>
+		
+		
+		<a href="http://www.zhihu.com/people/wawlian" target="_blank" class="icon-zhihu" title="知乎"></a>
+		
+		
+		<a href="https://plus.google.com/104724126254137490000?rel=author" target="_blank" class="icon-google_plus" title="Google+"></a>
+		
+		
+		<a href="mailto:xiongfeng0601@gmail.com" target="_blank" class="icon-email" title="Email Me"></a>
+		
+	</div>
+			
+		
+
+		<p class="copyright">
+		Powered by <a href="http://hexo.io" target="_blank" title="hexo">hexo</a> and Theme by <a href="https://github.com/wuchong/jacman" target="_blank" title="Jacman">Jacman</a> © 2015 
+		
+		<a href="/about" target="_blank" title="wawlian">wawlian</a>
+		
+		
+		</p>
+</div>
+</footer>
+    <script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/jquery.qrcode-0.12.0.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.navbar').click(function(){
+    $('header nav').toggleClass('shownav');
+  });
+  var myWidth = 0;
+  function getSize(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+  };
+  var m = $('#main'),
+      a = $('#asidepart'),
+      c = $('.closeaside'),
+      o = $('.openaside');
+  c.click(function(){
+    a.addClass('fadeOut').css('display', 'none');
+    o.css('display', 'block').addClass('fadeIn');
+    m.addClass('moveMain');
+  });
+  o.click(function(){
+    o.css('display', 'none').removeClass('beforeFadeIn');
+    a.css('display', 'block').removeClass('fadeOut').addClass('fadeIn');      
+    m.removeClass('moveMain');
+  });
+  $(window).scroll(function(){
+    o.css("top",Math.max(80,260-$(this).scrollTop()));
+  });
+  
+  $(window).resize(function(){
+    getSize(); 
+    if (myWidth >= 1024) {
+      $('header nav').removeClass('shownav');
+    }else{
+      m.removeClass('moveMain');
+      a.css('display', 'block').removeClass('fadeOut');
+      o.css('display', 'none');
+      
+      $('#toc.toc-aside').css('display', 'none');
+        
+    }
+  });
+});
+</script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var ai = $('.article-content>iframe'),
+      ae = $('.article-content>embed'),
+      t  = $('#toc'),
+      ta = $('#toc.toc-aside'),
+      o  = $('.openaside'),
+      c  = $('.closeaside');
+  if(ai.length>0){
+    ai.wrap('<div class="video-container" />');
+  };
+  if(ae.length>0){
+   ae.wrap('<div class="video-container" />');
+  };
+  c.click(function(){
+    ta.css('display', 'block').addClass('fadeIn');
+  });
+  o.click(function(){
+    ta.css('display', 'none');
+  });
+  $(window).scroll(function(){
+    ta.css("top",Math.max(140,320-$(this).scrollTop()));
+  });
+});
+</script>
+
+
+
+
+<script type="text/javascript">
+  var duoshuoQuery = {short_name:"wawlian"};
+  (function() {
+    var ds = document.createElement('script');
+    ds.type = 'text/javascript';ds.async = true;
+    ds.src = '//static.duoshuo.com/embed.js';
+    ds.charset = 'UTF-8';
+    (document.getElementsByTagName('head')[0] 
+    || document.getElementsByTagName('body')[0]).appendChild(ds);
+  })();
+</script> 
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.article-content').each(function(i){
+    $(this).find('img').each(function(){
+      if ($(this).parent().hasClass('fancybox')) return;
+      var alt = this.alt;
+      if (alt) $(this).after('<span class="caption">' + alt + '</span>');
+      $(this).wrap('<a href="' + this.src + '" title="' + alt + '" class="fancybox"></a>');
+    });
+    $(this).find('.fancybox').each(function(){
+      $(this).attr('rel', 'article' + i);
+    });
+  });
+  if($.fancybox){
+    $('.fancybox').fancybox();
+  }
+}); 
+</script>
+
+
+
+<!-- Analytics Begin -->
+
+
+
+
+
+<!-- Analytics End -->
+
+<!-- Totop Begin -->
+
+	<div id="totop">
+	<a title="返回顶部"><img src="/img/scrollup.png"/></a>
+	</div>
+	<script src="/js/totop.js"></script>
+
+<!-- Totop End -->
+
+<!-- MathJax Begin -->
+<!-- mathjax config similar to math.stackexchange -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+<!-- MathJax End -->
+
+<!-- Tiny_search Begin -->
+
+<!-- Tiny_search End -->
+
+  </body>
+</html>

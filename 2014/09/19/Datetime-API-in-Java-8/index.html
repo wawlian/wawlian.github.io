@@ -1,0 +1,566 @@
+
+ <!DOCTYPE HTML>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  
+    <title>Datetime API in Java 8 | wawlian说</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no">
+    
+    <meta name="author" content="wawlian">
+    
+
+    
+    <meta name="description" content="1.Java时间API历史Java在1.0引入了Date类。从事后看来，这个类的设计当时是没有经过深思熟虑的。这个类中的很多方法在1.1版本的JDK中就被废弃了。
+Java在1.1引入了Calendar类。这个类实际上也没有得到好评：这个类的实例是可变的，并且这个类也没有处理闰秒的问题。
+Java在1.8引入了java.timeAPI。这套API可以比较好的弥补以前的时间API中的一些缺陷。
+2.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Datetime API in Java 8">
+<meta property="og:url" content="http://codingblogs.net/2014/09/19/Datetime-API-in-Java-8/index.html">
+<meta property="og:site_name" content="wawlian说">
+<meta property="og:description" content="1.Java时间API历史Java在1.0引入了Date类。从事后看来，这个类的设计当时是没有经过深思熟虑的。这个类中的很多方法在1.1版本的JDK中就被废弃了。
+Java在1.1引入了Calendar类。这个类实际上也没有得到好评：这个类的实例是可变的，并且这个类也没有处理闰秒的问题。
+Java在1.8引入了java.timeAPI。这套API可以比较好的弥补以前的时间API中的一些缺陷。
+2.">
+<meta property="og:updated_time" content="2015-07-18T14:02:55.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Datetime API in Java 8">
+<meta name="twitter:description" content="1.Java时间API历史Java在1.0引入了Date类。从事后看来，这个类的设计当时是没有经过深思熟虑的。这个类中的很多方法在1.1版本的JDK中就被废弃了。
+Java在1.1引入了Calendar类。这个类实际上也没有得到好评：这个类的实例是可变的，并且这个类也没有处理闰秒的问题。
+Java在1.8引入了java.timeAPI。这套API可以比较好的弥补以前的时间API中的一些缺陷。
+2.">
+<meta name="twitter:creator" content="@wawlian">
+<link rel="publisher" href="104724126254137490000">
+
+    
+    <link rel="alternative" href="/atom.xml" title="wawlian说" type="application/atom+xml">
+    
+    
+    <link rel="icon" href="/img/favicon.ico">
+    
+    
+    <link rel="apple-touch-icon" href="/img/jacman.jpg">
+    <link rel="apple-touch-icon-precomposed" href="/img/jacman.jpg">
+    
+    <link rel="stylesheet" href="/css/style.css" type="text/css">
+</head>
+
+  <body>
+    <header>
+      
+<div>
+		
+			<div id="textlogo">
+				<h1 class="site-name"><a href="/" title="wawlian说">wawlian说</a></h1>
+				<h2 class="blog-motto"></h2>
+			</div>
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="菜单">
+			</a></div>
+			<nav class="animated">
+				<ul>
+					<ul>
+					 
+						<li><a href="/">首页</a></li>
+					
+						<li><a href="/archives">归档</a></li>
+					
+					<li>
+ 					
+					<form class="search" action="//google.com/search" method="get" accept-charset="utf-8">
+						<label>Search</label>
+						<input type="search" id="search" name="q" autocomplete="off" maxlength="20" placeholder="搜索" />
+						<input type="hidden" name="q" value="site:codingblogs.net">
+					</form>
+					
+					</li>
+				</ul>
+			</nav>			
+</div>
+    </header>
+    <div id="container">
+      <div id="main" class="post" itemscope itemprop="blogPost">
+  
+	<article itemprop="articleBody"> 
+		<header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2014/09/19/Datetime-API-in-Java-8/" title="Datetime API in Java 8" itemprop="url">Datetime API in Java 8</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="https://plus.google.com/104724126254137490000?rel=author" title="wawlian" target="_blank" itemprop="author">wawlian</a>
+		
+  <p class="article-time">
+    <time datetime="2014-09-19T11:28:11.000Z" itemprop="datePublished"> 发表于 2014-09-19</time>
+    
+  </p>
+</header>
+	<div class="article-content">
+		
+		<h1 id="1-Java时间API历史">1.Java时间API历史</h1><p>Java在1.0引入了<code>Date</code>类。从事后看来，这个类的设计当时是没有经过深思熟虑的。这个类中的很多方法在1.1版本的JDK中就被废弃了。</p>
+<p>Java在1.1引入了<code>Calendar</code>类。这个类实际上也没有得到好评：这个类的实例是可变的，并且这个类也没有处理<a href="http://zh.wikipedia.org/wiki/%E9%97%B0%E7%A7%92" target="_blank" rel="external">闰秒</a>的问题。</p>
+<p>Java在1.8引入了<code>java.time</code>API。这套API可以比较好的弥补以前的时间API中的一些缺陷。</p>
+<h1 id="2-时间线与Instant">2.时间线与Instant</h1><p>Java中引入<code>Instant</code>来代表时间轴上的一个点。时间原点<code>epoch</code>，是1970年本初子午线经过格林威治皇家观测台的时间。从这远点开始，每天的时间用86400秒来度量，精度为纳秒。</p>
+<p>可以使用Instant.now()来获取当前时间点，两个Instant之间可以使用Duration.between()来比较时间间隔。</p>
+<p>可以通过Instant.equals()和compareTo()方法来比较两个时间点得大小和相等性。</p>
+<pre><code>Instant <span class="operator"><span class="keyword">start</span> = Instant.<span class="keyword">now</span>();</span>
+runSomeAlorithm();
+Instant <span class="operator"><span class="keyword">end</span> = Instant.<span class="keyword">now</span>();</span>
+Duration timeElapsed = Duration.between(<span class="operator"><span class="keyword">start</span>, <span class="keyword">end</span>);</span>
+</code></pre><p>Instant类中有很多重载的加、减方法。Duration类中除了基本的加减方法，还有一些乘除方法，以及判断是否负数(<code>isNegative()</code>,<code>isZero()</code>)。详情参见API文档。</p>
+<h1 id="3-本地日期时间">3.本地日期时间</h1><p>Java中的人类方便阅读的日期时间有两类：本地日期时间和时区日期时间。本地日期时间只有日期和/或当天的时间信息，没有时区的信息，因此并不对应Instant。而时区时间则可以对应Instant。</p>
+<p>Java 8中使用<code>LocalDate</code>表示日期：</p>
+<pre><code>LocalDate today = LocalDate.now()<span class="comment">;</span>
+LocalDate birthDay = LocalDate.of(1989, 7, 16)<span class="comment">;</span>
+LocalDate dob = LocalDate.of(1989, Month.JULY, 16)<span class="comment">;</span>
+</code></pre><p>与<code>java.util.Date</code>不同的是，LocalDate中的月不是从0开始的。年份也不是从1900开始。LocalDate有一些常用的加、减方法。也可以获取某个LocalDate是一个月中的第几天，一年中的第几天等。具体详见API文档。</p>
+<h1 id="4-日期Adjusters">4.日期Adjusters</h1><p>有时候需要计算类似于“每个月的第一个星期二”这类的需求。使用<code>TemporalAdjusters</code>类可以提供一堆静态方法来做一些通用的调节。</p>
+<pre><code>LocalDate firstTuesday = LocalDate.<span class="keyword">of</span>(<span class="property">year</span>, <span class="property">month</span>, <span class="property">day</span>)
+    .<span class="keyword">with</span>(TemporalAdjusters.nextOrSame(DayOfWeek.TUESDAY));
+</code></pre><p>也可以通过实现TemporalAdjuster接口来实现自己的调整器：</p>
+<pre><code><span class="type">TemporalAdjuster</span> <span class="type">NEXT_WORKDAY</span> = w -&gt; {
+    <span class="type">LocalDate</span> <span class="literal">result</span> = (<span class="type">LocalDate</span>) w;
+    <span class="keyword">do</span> {
+        <span class="literal">result</span> = <span class="literal">result</span>.plusDays(<span class="number">1</span>);
+    }<span class="keyword">while</span> (<span class="literal">result</span>.getDayOfWeek().getValue() &gt;= <span class="number">6</span>);
+    <span class="keyword">return</span> <span class="literal">result</span>;
+};
+<span class="type">LocalDate</span> backToWork = today.<span class="keyword">with</span>(<span class="type">NEXT_WORKDAY</span>);
+</code></pre><h1 id="5-本地时间">5.本地时间</h1><p><code>LocalTime</code>表示一天中的时间。例如：15：00：00. LocalTime类也有now()和of()方法来构建实例。</p>
+<p>LocalTime rightNow = LocalTime.now();<br>LocalTime bedTime = LocalTime.of(22, 30);</p>
+<p>LocalTime有一系列的加减操作方法，判断两个时间哪个在前哪个在后的方法，变化指定时间的方法等，具体参见API文档。</p>
+<h1 id="6-时区时间">6.时区时间</h1><p>时区时间使用<code>ZonedDateTime</code>来表示。该类中有一系列的静态方法来创建时区时间：</p>
+<pre><code><span class="keyword">public</span> <span class="keyword">static</span> ZonedDateTime of(<span class="built_in">int</span> <span class="built_in">year</span>,
+                               <span class="built_in">int</span> <span class="built_in">month</span>,
+                               <span class="built_in">int</span> dayOfMonth,
+                               <span class="built_in">int</span> <span class="built_in">hour</span>,
+                               <span class="built_in">int</span> <span class="built_in">minute</span>,
+                               <span class="built_in">int</span> <span class="built_in">second</span>,
+                               <span class="built_in">int</span> nanoOfSecond,
+                               ZoneId zone)
+<span class="keyword">public</span> <span class="keyword">static</span> ZonedDateTime of(LocalDate date,
+                               LocalTime time,
+                               ZoneId zone)
+<span class="keyword">public</span> <span class="keyword">static</span> ZonedDateTime now(ZoneId zone)
+<span class="keyword">public</span> <span class="keyword">static</span> ZonedDateTime now()
+</code></pre><p>看一个例子：</p>
+<pre><code>ZonedDateTime time = ZonedDateTime.<span class="keyword">of</span>(<span class="number">1969</span>, <span class="number">7</span>, <span class="number">16</span>, <span class="number">9</span>, <span class="number">32</span>, <span class="number">0</span>, <span class="number">0</span>, ZoneId.<span class="keyword">of</span>(<span class="string">"America/New_York"</span>));
+<span class="comment">//1969-07-16T09:32-04:00[America/New_York]</span>
+</code></pre><p>时区时间的使用相对来说比较复杂，所以Java API的设计者建议开发者更多的使用本地日期时间。ZonedDateTime中的方法与前面提到的类大同小异。详见API文档。</p>
+<h1 id="7-格式化与解析">7.格式化与解析</h1><p><code>DateTimeFormatter</code>提供了三种formatter来打印日期时间值，例如：<br>BASIC_ISO_DATE 年月日，时区偏移量 19690716-0500这几种方式其实都不适合我们常用的yyyy-MM-dd的表示方法。</p>
+<p>如果要自定义日期时间格式，可以使用ofPattern方法：</p>
+<pre><code><span class="variable">DateTimeFormatter</span> formatter = <span class="variable">DateTimeFormatter</span>.<span class="keyword">of</span><span class="variable">Pattern</span>(<span class="string">"E yyyy-MM-dd HH:mm"</span>);
+</code></pre><p>其中，e表示day of week。其中e表示3，E表示Wed， EEEE表示Wednesday， EEEEE：W</p>
+<p>具体的这些模式元素参见API文档即可。</p>
+<h1 id="8-与老的日期时间API互操作：">8.与老的日期时间API互操作：</h1><pre><code><span class="tag">Instant</span>&lt;<span class="tag">-</span>&gt;<span class="tag">java</span><span class="class">.util</span><span class="class">.Date</span>
+<span class="tag">Date</span><span class="class">.from</span>(<span class="tag">instant</span>)
+<span class="tag">date</span><span class="class">.toInstant</span>()
+
+<span class="tag">ZonedDateTime</span>&lt;<span class="tag">-</span>&gt;<span class="tag">java</span><span class="class">.util</span><span class="class">.GregorianCalendar</span>
+<span class="tag">GregorianCalendar</span><span class="class">.from</span>(<span class="tag">zonedDateTime</span>)
+<span class="tag">cal</span><span class="class">.toZonedDateTime</span>()
+
+<span class="tag">Instant</span>&lt;<span class="tag">-</span>&gt;<span class="tag">java</span><span class="class">.sql</span><span class="class">.Timestamp</span>
+<span class="tag">Timestamp</span><span class="class">.from</span>(<span class="tag">instant</span>)
+<span class="tag">timestamp</span><span class="class">.toInstant</span>()
+
+<span class="tag">LocalDateTime</span>&lt;<span class="tag">-</span>&gt;<span class="tag">java</span><span class="class">.sql</span><span class="class">.Timestamp</span>
+<span class="tag">Timestamp</span><span class="class">.valueOf</span>(<span class="tag">localDateTime</span>)
+<span class="tag">timestamp</span><span class="class">.toLocalDateTime</span>()
+
+<span class="tag">LocalDate</span>&lt;<span class="tag">-</span>&gt;<span class="tag">java</span><span class="class">.sql</span><span class="class">.Date</span>
+<span class="tag">Date</span><span class="class">.valueOf</span>(<span class="tag">localDate</span>)
+<span class="tag">date</span><span class="class">.toLocalDate</span>();
+
+<span class="tag">Time</span><span class="class">.valueOf</span>(<span class="tag">localTime</span>)
+<span class="tag">time</span><span class="class">.toLocalTime</span>()
+
+<span class="tag">DateTimeFormatter</span>&lt;<span class="tag">-</span>&gt;<span class="tag">java</span><span class="class">.text</span><span class="class">.DateFormat</span>
+<span class="tag">format</span><span class="class">.toFormat</span>()
+<span class="tag">None</span>
+
+<span class="tag">java</span><span class="class">.util</span><span class="class">.TimeZone</span>&lt;<span class="tag">-</span>&gt;<span class="tag">ZoneId</span>
+<span class="tag">TimeZone</span><span class="class">.getTimeZone</span>(<span class="tag">id</span>)
+<span class="tag">timeZone</span><span class="class">.toZoneId</span>()
+
+<span class="tag">java</span><span class="class">.nio</span><span class="class">.file</span><span class="class">.attribute</span><span class="class">.FileTime</span>&lt;<span class="tag">-</span>&gt;<span class="tag">Instant</span>
+<span class="tag">FileTime</span><span class="class">.from</span>(<span class="tag">instant</span>)
+<span class="tag">fileTime</span><span class="class">.toInstant</span>()
+</code></pre>  
+	</div>
+		<footer class="article-footer clearfix">
+<div class="article-catetags">
+
+
+  <div class="article-tags">
+  
+  <span></span> <a href="/tags/Datetime-API/">Datetime API</a><a href="/tags/Java-8/">Java 8</a>
+  </div>
+
+</div>
+
+
+
+	<div class="article-share" id="share">
+	
+	<div class="share-jiathis">
+	  
+<div class="jiathis_style_24x24">
+	<a class="jiathis_button_tsina"></a>
+	<a class="jiathis_button_weixin"></a>
+	<a class="jiathis_button_renren"></a>
+	<a class="jiathis_button_qzone"></a>
+	<a class="jiathis_button_googleplus"></a>
+	<a class="jiathis_button_douban"></a>
+	<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+	<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+    var jiathis_config={
+    data_track_clickback:true,
+    sm:"copy,renren,cqq",
+    pic:"",
+    summary:"",
+    
+  </script> 
+<script type="text/javascript" src="//v3.jiathis.com/code/jia.js?uid=
+1358166128571307" charset="utf-8"></script>      
+
+	 </div>
+	
+	</div>
+
+
+</footer>
+
+   	       
+	</article>
+	
+<nav class="article-nav clearfix">
+ 
+ <div class="prev" >
+ <a href="/2014/09/19/webkit2png-简单使用/" title="webkit2png 简单使用">
+  <strong>上一篇：</strong><br/>
+  <span>
+  webkit2png 简单使用</span>
+</a>
+</div>
+
+
+<div class="next">
+<a href="/2014/09/19/Stream-API-in-Java-8/"  title="Stream API in Java 8">
+ <strong>下一篇：</strong><br/> 
+ <span>Stream API in Java 8
+</span>
+</a>
+</div>
+
+</nav>
+
+	
+<section id="comments" class="comment">
+	<div class="ds-thread" data-thread-key="2014/09/19/Datetime-API-in-Java-8/" data-title="Datetime API in Java 8" data-url="http://codingblogs.net/2014/09/19/Datetime-API-in-Java-8/"></div>
+</section>
+
+
+</div>  
+      <div class="openaside"><a class="navbutton" href="#" title="显示侧边栏"></a></div>
+
+  <div id="toc" class="toc-aside">
+  <strong class="toc-title">文章目录</strong>
+ 
+ <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Java时间API历史"><span class="toc-number">1.</span> <span class="toc-text">1.Java时间API历史</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-时间线与Instant"><span class="toc-number">2.</span> <span class="toc-text">2.时间线与Instant</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-本地日期时间"><span class="toc-number">3.</span> <span class="toc-text">3.本地日期时间</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-日期Adjusters"><span class="toc-number">4.</span> <span class="toc-text">4.日期Adjusters</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-本地时间"><span class="toc-number">5.</span> <span class="toc-text">5.本地时间</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-时区时间"><span class="toc-number">6.</span> <span class="toc-text">6.时区时间</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#7-格式化与解析"><span class="toc-number">7.</span> <span class="toc-text">7.格式化与解析</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#8-与老的日期时间API互操作："><span class="toc-number">8.</span> <span class="toc-text">8.与老的日期时间API互操作：</span></a></li></ol>
+ 
+  </div>
+
+<div id="asidepart">
+<div class="closeaside"><a class="closebutton" href="#" title="隐藏侧边栏"></a></div>
+<aside class="clearfix">
+
+  
+
+  
+<div class="tagslist">
+	<p class="asidetitle">标签</p>
+		<ul class="clearfix">
+		
+			
+				<li><a href="/tags/Java-8/" title="Java 8">Java 8<sup>4</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Datetime-API/" title="Datetime API">Datetime API<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/webkit2png/" title="webkit2png">webkit2png<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Stream-API/" title="Stream API">Stream API<sup>1</sup></a></li>
+			
+		
+			
+				<li><a href="/tags/Lambda-Expression/" title="Lambda Expression">Lambda Expression<sup>1</sup></a></li>
+			
+		
+		</ul>
+</div>
+
+
+  
+  <div class="archiveslist">
+    <p class="asidetitle"><a href="/archives">归档</a></p>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2014/09/">九月 2014</a><span class="archive-list-count">5</span></li></ul>
+  </div>
+
+
+  <div class="rsspart">
+	<a href="/atom.xml" target="_blank" title="rss">RSS 订阅</a>
+</div>
+
+  <div class="weiboshow">
+  <p class="asidetitle">新浪微博</p>
+    <iframe width="100%" height="119" class="share_self"  frameborder="0" scrolling="no" src="http://widget.weibo.com/weiboshow/index.php?language=&width=0&height=119&fansRow=2&ptype=1&speed=0&skin=9&isTitle=1&noborder=1&isWeibo=0&isFans=0&uid=1281765830&verifier=b65df5a4&dpc=1"></iframe>
+</div>
+
+
+</aside>
+</div>
+    </div>
+    <footer><div id="footer" >
+	
+	<div class="line">
+		<span></span>
+		<div class="author"></div>
+	</div>
+	
+	
+	<section class="info">
+		<p> Hello ,I&#39;m wawlian in ifeng.com. <br/>
+			This is my blog,believe it or not.</p>
+	</section>
+	 
+	<div class="social-font" class="clearfix">
+		
+		<a href="http://weibo.com/wawlian" target="_blank" class="icon-weibo" title="微博"></a>
+		
+		
+		<a href="https://github.com/wawlian" target="_blank" class="icon-github" title="github"></a>
+		
+		
+		<a href="http://stackoverflow.com/users/wawlian" target="_blank" class="icon-stack-overflow" title="stackoverflow"></a>
+		
+		
+		<a href="https://twitter.com/wawlian" target="_blank" class="icon-twitter" title="twitter"></a>
+		
+		
+		<a href="https://www.facebook.com/wawlian0" target="_blank" class="icon-facebook" title="facebook"></a>
+		
+		
+		
+		<a href="https://www.douban.com/people/61799727" target="_blank" class="icon-douban" title="豆瓣"></a>
+		
+		
+		<a href="http://www.zhihu.com/people/wawlian" target="_blank" class="icon-zhihu" title="知乎"></a>
+		
+		
+		<a href="https://plus.google.com/104724126254137490000?rel=author" target="_blank" class="icon-google_plus" title="Google+"></a>
+		
+		
+		<a href="mailto:xiongfeng0601@gmail.com" target="_blank" class="icon-email" title="Email Me"></a>
+		
+	</div>
+			
+		
+
+		<p class="copyright">
+		Powered by <a href="http://hexo.io" target="_blank" title="hexo">hexo</a> and Theme by <a href="https://github.com/wuchong/jacman" target="_blank" title="Jacman">Jacman</a> © 2015 
+		
+		<a href="/about" target="_blank" title="wawlian">wawlian</a>
+		
+		
+		</p>
+</div>
+</footer>
+    <script src="/js/jquery-2.0.3.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script src="/js/jquery.qrcode-0.12.0.min.js"></script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.navbar').click(function(){
+    $('header nav').toggleClass('shownav');
+  });
+  var myWidth = 0;
+  function getSize(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+  };
+  var m = $('#main'),
+      a = $('#asidepart'),
+      c = $('.closeaside'),
+      o = $('.openaside');
+  c.click(function(){
+    a.addClass('fadeOut').css('display', 'none');
+    o.css('display', 'block').addClass('fadeIn');
+    m.addClass('moveMain');
+  });
+  o.click(function(){
+    o.css('display', 'none').removeClass('beforeFadeIn');
+    a.css('display', 'block').removeClass('fadeOut').addClass('fadeIn');      
+    m.removeClass('moveMain');
+  });
+  $(window).scroll(function(){
+    o.css("top",Math.max(80,260-$(this).scrollTop()));
+  });
+  
+  $(window).resize(function(){
+    getSize(); 
+    if (myWidth >= 1024) {
+      $('header nav').removeClass('shownav');
+    }else{
+      m.removeClass('moveMain');
+      a.css('display', 'block').removeClass('fadeOut');
+      o.css('display', 'none');
+      
+      $('#toc.toc-aside').css('display', 'none');
+        
+    }
+  });
+});
+</script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var ai = $('.article-content>iframe'),
+      ae = $('.article-content>embed'),
+      t  = $('#toc'),
+      ta = $('#toc.toc-aside'),
+      o  = $('.openaside'),
+      c  = $('.closeaside');
+  if(ai.length>0){
+    ai.wrap('<div class="video-container" />');
+  };
+  if(ae.length>0){
+   ae.wrap('<div class="video-container" />');
+  };
+  c.click(function(){
+    ta.css('display', 'block').addClass('fadeIn');
+  });
+  o.click(function(){
+    ta.css('display', 'none');
+  });
+  $(window).scroll(function(){
+    ta.css("top",Math.max(140,320-$(this).scrollTop()));
+  });
+});
+</script>
+
+
+
+
+<script type="text/javascript">
+  var duoshuoQuery = {short_name:"wawlian"};
+  (function() {
+    var ds = document.createElement('script');
+    ds.type = 'text/javascript';ds.async = true;
+    ds.src = '//static.duoshuo.com/embed.js';
+    ds.charset = 'UTF-8';
+    (document.getElementsByTagName('head')[0] 
+    || document.getElementsByTagName('body')[0]).appendChild(ds);
+  })();
+</script> 
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.article-content').each(function(i){
+    $(this).find('img').each(function(){
+      if ($(this).parent().hasClass('fancybox')) return;
+      var alt = this.alt;
+      if (alt) $(this).after('<span class="caption">' + alt + '</span>');
+      $(this).wrap('<a href="' + this.src + '" title="' + alt + '" class="fancybox"></a>');
+    });
+    $(this).find('.fancybox').each(function(){
+      $(this).attr('rel', 'article' + i);
+    });
+  });
+  if($.fancybox){
+    $('.fancybox').fancybox();
+  }
+}); 
+</script>
+
+
+
+<!-- Analytics Begin -->
+
+
+
+
+
+<!-- Analytics End -->
+
+<!-- Totop Begin -->
+
+	<div id="totop">
+	<a title="返回顶部"><img src="/img/scrollup.png"/></a>
+	</div>
+	<script src="/js/totop.js"></script>
+
+<!-- Totop End -->
+
+<!-- MathJax Begin -->
+<!-- mathjax config similar to math.stackexchange -->
+
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      processEscapes: true
+    }
+  });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    });
+</script>
+
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+<!-- MathJax End -->
+
+<!-- Tiny_search Begin -->
+
+<!-- Tiny_search End -->
+
+  </body>
+</html>
